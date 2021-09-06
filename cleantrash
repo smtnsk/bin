@@ -1,0 +1,5 @@
+#!/bin/sh
+
+trashdir="$XDG_DATA_HOME"/Trash
+[ "$(ls "$trashdir"/files)" ] && trash-empty
+[ "$(ls "$trashdir"/files)" ] && rm -rf "$trashdir"/files/*

@@ -1,0 +1,67 @@
+#!/bin/sh
+
+## Usage: opf [<binary>] [<folders to search>] [<query>]
+
+## Usecase 1: open a single file with bin or xdg-open
+## Usecase 2: open multiple files with bin or xdg-open; <bin> <files>
+## Usecase 3: open multiple files in parallel with bin or xdg-open; -p
+
+while getopts dhi:p opt; do
+	case $opt in
+		h) : ;;  # TODO: print help
+		d) readonly include_dirs=1 ;;
+		i) ignore_file="$OPTARG" ;;
+		p) : ;;  # TODO: launch in parallel with xargs
+		*) exit ;;  # TODO: print help
+	esac
+done
+shift $((OPTIND - 1))
+
+readonly ignore_file="${ignore_file:-${XDG_CONFIG_HOME}/fd/ignore}"
+
+## If '$1' is a binary, use it to open the query result
+if [ "$1" ]; then
+	if { [ ! -e "$1" ] && which "$1" > /dev/null; } \
+			|| { [ -x "$1" ] && [ ! -d "$1" ]; }; then
+		readonly bin="$1"
+		shift
+	fi
+fi
+[ "$bin" ] || readonly bin=xdg-open
+
+# fd . "$@" -0 | fzf --read0 | xargs -P0 -I{} $bin "{}"
+# fzf | xdg-open  # when xdg-open.sh is done
+
+## Collect directories to search; use full paths so that they match entries in '$ignore_file'
+while [ -d "$1" ]; do
+	dirs="$dirs:$(cd "$1" && pwd)"
+	shift
+done
+[ "$dirs" ] || dirs="$PWD"
+readonly dirs="$dirs"
+readonly query="$*"  # Remaining args are the search query
+IFS=":"
+set -- $dirs
+
+[ $# -gt 0 ] && [ -z "$1" ] && shift  # Skip blank '$1'
+
+if [ "$include_dirs" ]; then
+	set -- $(fd -H -0 . "$@" \
+		| fzf --read0 --print0 -1 -0 -q "$query" \
+		| tr '\0' ':')
+else
+	set -- $(rg --files --follow --hidden --ignore-file="$ignore_file" -0 "$@" 2> /dev/null \
+		| fzf --read0 --print0 -1 -0 -q "$query" \
+		| tr '\0' ':')
+	# set -- $(fd -t f -H --follow -0 . "$@" \
+	# 	| fzf --read0 --print0 -1 -0 -q "$query" \
+	# 	| tr '\0' ':')
+fi
+
+if [ "$1" ]; then
+	# set -o history  # bashism
+	# history -s $bin "$@"  # bashism
+	# print -s "%s %s" "$bin" "$*"  # kshism
+	printf "%s \"%s\"\n" "$bin" "$*" | tee -a "$HISTFILE"  # TODO: deduplication
+	$bin "$@"
+fi

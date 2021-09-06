@@ -1,0 +1,84 @@
+#!/bin/sh
+
+# TODO:
+#	-trap, cleanup
+# 	-remote backup over ssh or sshfs
+# 	-list existing backups
+#	-set secure permissions on created directories
+
+
+fail()
+{
+	printf "\nERROR: %s\n" "$*"
+	exit 1
+}
+
+readonly default_excludes="dev/*
+/media/*
+/mnt/*
+/proc/*
+/run/*
+/swap/*
+/sys/*
+/tmp/*
+"
+readonly config_dir="$HOME/.config/${0##*/}"
+readonly exclude_file="$config_dir"/exclude
+readonly machine="$(hostname)"
+readonly bak_dir=/mnt/storage/backup/"$machine"
+
+if [ "$1" ]; then
+	[ -e "$1" ] || fail "$1 does not exist"
+
+	readonly src="$(realpath "$1")"
+	readonly dest="${bak_dir}${src%/*}"
+else
+	readonly src="/"
+	readonly dest="$bak_dir"
+fi
+
+printf "Checking excludes ..."
+
+if [ ! -e "$exclude_file" ]; then
+	printf "\n%s" "$exclude_file not found. Creating with defaults ..."
+
+	mkdir -p "$config_dir" ||
+		fail "failed to create $config_dir"
+	printf "%s" "$default_excludes" > "$exclude_file" ||
+		fail "failed to create $exclude_file"
+
+	printf "\n---\n%s\n" "$exclude_file:"
+	cat "$exclude_file"
+	printf -- "---\n"
+	while :; do
+		printf "%s\n> " "Continue with these excludes? (y/n)"
+		read -r input
+		case "$input" in
+			Y|y|Yes|yes) break ;;
+			N|n|No|no)
+				printf "\n%s\n" "Edit $exclude_file manually and rerun ${0##*/}"
+				exit 0
+				;;
+			*) continue ;;
+		esac
+	done
+fi
+
+mkdir -p "$bak_dir" ||
+	fail "failed to create $bak_dir"
+
+printf "\n%s" "Running rsync ..."
+printf "\n<- %s\n-> %s\n" "$src" "$dest"
+
+## precompiled rsync from apk doesn't support the -N flag (preserving crtimes)
+if doas rsync -cauHAUXh \
+	--no-i-r \
+	--no-compress \
+	--inplace \
+	--info=progress2 \
+	--delete \
+	--delete-excluded \
+	--exclude-from "$exclude_file" "$src" "$dest"
+then
+	printf "\n%s\n" "Backup succesfully stored in $bak_dir"
+fi

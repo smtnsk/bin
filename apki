@@ -1,0 +1,23 @@
+#!/bin/sh
+
+[ "$1" ] || { apk info; exit; }
+
+## If options were provided, run 'apk info' with them and exit
+for arg in "$@"; do
+	expr "$arg" : "-*" > /dev/null && { apk info "$@"; exit; }
+done
+
+## If arguments with no options were provided,
+## display the installed size of the package(s) in human-readable format
+apk info "$@" |
+	while read -r line; do
+		case "$line" in
+			''|*[!0-9]*)
+				echo "$line"
+				;;
+			*)
+				printf "%s\n%s\n" "$(echo "scale=2; $line/1024" | bc) KiB" \
+					   "$(echo "scale=2; $line/1024^2" | bc) MiB"
+			   	;;
+		esac
+	done

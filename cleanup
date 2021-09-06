@@ -1,0 +1,22 @@
+#!/bin/sh
+
+## Maybe use rehome instead?
+
+list="$HOME"/.config/cleanup
+
+if [ "$1" ]; then
+	for i; do
+		if ! grep "$i" "$list"; then
+			printf "%s\n" "$(realpath "$i")" >> "$list"
+		fi
+	done
+else
+	count=0
+	while read -r file; do
+		if [ -e "$file" ]; then
+			count=$(( count + 1 ))
+			rm -rf "$file"
+		fi
+	done < "$list"
+	[ "$count" -gt 0 ] && printf "%s items removed" "$count"
+fi

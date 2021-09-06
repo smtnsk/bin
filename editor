@@ -1,0 +1,6 @@
+#!/bin/sh
+
+## This is a hack to get $EDITOR with spaces in it (as in "cmd -x -y")
+## working with picky applications, such as BusyBox crontab
+
+exec $REAL_EDITOR "$@"

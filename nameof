@@ -1,0 +1,4 @@
+#!/bin/sh
+
+IFS=','
+ps -p "$*" -o pid=,comm=

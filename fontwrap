@@ -1,0 +1,5 @@
+#!/bin/sh
+
+for font in "$@"; do
+	fonttosfnt -v -o "${font%.*}.otb" "$font";
+done

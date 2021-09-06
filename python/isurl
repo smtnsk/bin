@@ -1,0 +1,13 @@
+#!/usr/bin/python3
+
+from sys import argv, exit
+from validators import url as validate
+
+url = str(argv[1])
+if "http" not in url[:4]:
+    url = "http://" + url
+
+if validate(url):
+    exit(0)
+else:
+    exit(1)

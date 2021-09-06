@@ -1,0 +1,99 @@
+#!/bin/sh
+
+## Downloads doppler radar images that the given $station_id has taken
+## in the last $range hours and creates an mp4 or a gif animation from them
+
+## https://www.ilmatieteenlaitos.fi/suomen-havainnot?station=852678
+
+## TODO:
+##	parallelise downloads
+##	remove existing images that are out of range
+
+path="$HOME"/.local/share/radar
+format=gif ## mp4 | gif
+anim_file=radar_anim."$format"
+
+station_id=852678
+url_base="https://cdn.fmi.fi/weather-observations/products/radar-tiles/station_${station_id}/fi/"
+
+range=${1:-2} ## in hours
+
+utc_h=$(date -u +"%H")
+utc_m=$(( $(date -u +"%M") / 5 * 5 )) ## round down to nearest 5
+# utc_date=$(date -u +"%Y%m%d")
+img_h=$(TZ=UTC+"$range" date +"%H")
+img_m="$utc_m"
+img_date=$(TZ=UTC+"$range" date +"%Y%m%d")
+
+cd "$path" || exit 1
+
+# while [ "$img_h" -ne "$utc_h" -a "$img_m" -ne "$utc_m" ]; do
+while [ "$img_h" -ne "$utc_h" ] || [ "$img_m" -ne "$utc_m" ]; do
+
+	## Prepend a '0' to minutes/hours if the value is a single digit
+	m_prefix=
+	[ ${#img_m} -eq 1 ] && m_prefix=0
+	h_prefix=
+	[ ${#img_h} -eq 1 ] && h_prefix=0
+
+	img="${img_date}${h_prefix}${img_h}${m_prefix}${img_m}"_"$station_id".png
+
+	## If the image doesn't exist locally, download it
+	# echo "Downloading missing images ..."
+	if [ ! -e "$img" ]; then
+		url_img="${url_base}${img}"
+
+		echo "Downloading $img ..."
+
+		curl -O "$url_img" > /dev/null 2>&1
+	fi
+
+	## Increment minutes
+	img_m=$(( img_m + 5 ))
+
+	## Increment hours
+	if [ "$img_m" -eq 60 ]; then
+		img_m=0
+		img_h=$(( img_h + 1 ))
+
+		## Increment date
+		if [ "$img_h" -eq 24 ]; then
+			img_h=0
+			range=$(( range - 1 ))
+			img_date=$(TZ=UTC+"$range" date +"%Y%m%d")
+		fi
+	fi
+done
+
+echo
+echo "Converting to $anim_file ..."
+
+case "$format" in
+	mp4)
+		ffmpeg -hide_banner -y \
+			-framerate 2 \
+			-pattern_type glob \
+			-i '*.png' \
+			-c:v libx264 \
+			-r 15 \
+			-pix_fmt yuv420p \
+			-vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" \
+			"$anim_file" > /dev/null 2>&1
+
+			# -vf scale=550:-2 \
+		;;
+	gif)
+		# convert -quality 75 -delay 50 -loop 0 *.png "$anim_file"
+
+		ffmpeg -hide_banner -y \
+			-framerate 2 \
+			-pattern_type glob \
+			-i '*.png' \
+			-r 15 \
+			"$anim_file" > /dev/null 2>&1
+		;;
+esac
+
+echo "Playing $anim_file ..."
+
+mpv --loop-file=inf "$anim_file" > /dev/null 2>&1 &

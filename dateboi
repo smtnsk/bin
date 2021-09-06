@@ -1,0 +1,61 @@
+#!/bin/sh
+
+## TODO:
+##  - read files from stdin, eg. from find/fd
+##    - strip path from filename
+
+usage() { echo "${0##*/} [-cqh] [-d FOLDER] FILES"; }
+
+transfer_cmd="mv -v"
+while getopts d:chq opt; do
+	case $opt in
+		h) usage; exit ;;
+		d)
+			[ -d "$OPTARG" ] || { echo "$OPTARG is not a directory"; exit 1; }
+			dest="$OPTARG"
+			;;
+		c) transfer_cmd="cp -v" ;;
+		q) quiet=1 ;;
+		*)
+			echo "unkown option $OPTARG"
+			usage
+			exit 1
+			;;
+	esac
+done
+shift $((OPTIND - 1))
+
+[ "$dest" ] || dest="."
+[ "$quiet" ] && transfer_cmd="${transfer_cmd% *}"
+
+files=$#
+moved=0
+errors=0
+for file; do
+	[ -f "$file" ] || continue
+
+	date="$(exiftool "$file" | awk '/Date\/Time Original/ {print $4,$5; exit;}')"
+	[ "$date" ] || date="$(mediainfo "$file" | awk '/Tagged date/ {print $5,$6; exit;}')"
+
+	if [ "$date" ]; then
+		time="${date#* }"
+		date="$(echo "${date% *}" | tr ':' '-')"  ## TODO: don't use tr with mediainfo
+
+		if $transfer_cmd "$file" "${dest}/${date}_${time}_${file}"; then
+			moved=$((moved + 1))
+		else
+			errors=$((errors + 1))
+		fi
+
+		unset date time
+	else
+		echo "'$file' skipped"
+	fi
+done
+
+if [ -z "$quiet" ]; then
+	cat <<EOF
+$moved/$files moved
+$errors errors
+EOF
+fi

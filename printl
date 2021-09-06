@@ -1,0 +1,50 @@
+#!/bin/sh
+
+fail()
+{
+	[ "$1" ] && printf "%s\n" "$*"
+	printf "%s\n" "Usage: ${0##*/} <file> <1st line number> <2nd line number>"
+	exit 1
+}
+
+[ $# -ne 3 ] && fail
+
+{ [ $2 -eq $2 ] && [ $3 -eq $3 ]; } ||
+	fail "ERROR: Given line numbers are not numbers"
+
+file="$1"
+[ -e "$file" ] || fail "ERROR: $file does not exist"
+[ -r "$file" ] || fail "ERROR: $file is not readable"
+[ -s "$file" ] || { printf "%s\n" "$file is empty"; exit 0; }
+
+lines="$(wc -l $file)"
+lines=${lines% *}
+[ $lines -eq 1 ] && { cat "$file"; exit 0; }
+
+if [ $2 -gt $3 ]; then
+	begin=$3
+	end=$2
+else
+	begin=$2
+	end=$3
+fi
+
+if [ $lines -lt $end ]; then
+	printf "%s\n" "$file has only $lines lines."
+
+	remainder=$((end - begin))
+	if [ $remainder -gt $lines ]; then
+		begin=0
+	else
+		begin=$((lines - remainder))
+	fi
+
+	printf "%s\n---\n" "Printing lines ${begin}-${lines}."
+	if [ $begin -eq 0 ]; then
+		cat "$file"
+	else
+		tail -n $remainder "$file"
+	fi
+else
+	head -n $end "$file" | tail -n $((end - begin + 1))
+fi

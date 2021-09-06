@@ -1,0 +1,11 @@
+#!/bin/sh
+
+## A poor man's 'setsid -f'
+
+# nohup "$@" > /dev/null 2>&1 & disown $!
+
+## Without 'disown' (pdksh doesn't have it)
+# (nohup "$@" > /dev/null 2>&1 & exit)
+
+## 'nohup' isn't necessary
+("$@" > /dev/null 2>&1 & exit)

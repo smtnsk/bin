@@ -1,0 +1,47 @@
+#!/bin/sh
+
+readonly name="${0##*/}"
+set -- $(pidof -x "$name")
+# [ "$#" -gt 1 ] && exit  ## Exit if already running
+for pid; do
+	[ $pid -ne $$ ] && kill $pid  ## Kill existing instances
+done
+
+readonly snd_add=/usr/share/sounds/communitheme/stereo/device-added.ogg
+readonly snd_rem=/usr/share/sounds/communitheme/stereo/device-removed.ogg
+
+fifo=$(mktemp -u /dev/shm/"$name".XXXXXX)
+if ! mkfifo -m 600 "$fifo"; then
+	fifo=$(mktemp -u "$TMPDIR"/"$name".XXXXXX)
+	mkfifo -m 600 "$fifo" || exit 1
+fi
+readonly fifo="$fifo"
+
+inotifyd - /dev/input/by-id:nd > "$fifo" &
+
+trap "[ -e $fifo ] && rm $fifo; kill $!" EXIT HUP INT QUIT TERM
+
+while read -r line; do
+	event=${line%%[!nd]*}
+	type=${line##*-}
+
+	[ "$type" != "kbd" ] && [ "$type" != "mouse" ] && continue
+
+	msg="$type configuration"
+	if [ "$event" = "n" ]; then
+		msg="$msg applied"
+		snd="$snd_add"
+		if [ "$type" = "kbd" ]; then
+			keyconfig
+		else
+			xset m 0 0
+		fi
+	else
+		msg="$msg removed"
+		snd="$snd_rem"
+	fi
+
+	## ffplay's output goes to stderr for reasons, hence the redirection
+	ffplay -hide_banner -autoexit -nodisp "$snd" 2>&1 &
+	pidof Xorg && notify-send -u critical -t 3000 "$msg"
+done < "$fifo" > /dev/null

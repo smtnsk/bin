@@ -1,0 +1,32 @@
+#!/bin/sh
+
+readonly name="${0##*/}"
+set -- $(pidof -x "$name")
+# [ "$#" -gt 1 ] && exit  ## Exit if already running
+for pid; do
+	[ $pid -ne $$ ] && kill $pid  ## Kill existing instances
+done
+
+readonly snd=/home/smtnskn/media/audio/sounds/TRIOP16_norm.wav
+readonly icon=/usr/share/icons/Adwaita/24x24/legacy/mail-unread.png
+# readonly icon=/usr/share/icons/Adwaita/24x24/legacy/mail-read.png
+readonly mailpath="$MAILDIR"/wilywily
+
+fifo=$(mktemp -u /dev/shm/"$name".XXXXXX)
+if ! mkfifo -m 600 "$fifo"; then
+	fifo=$(mktemp -u "$TMPDIR"/"$name".XXXXXX)
+	mkfifo -m 600 "$fifo" || exit 1
+fi
+readonly fifo="$fifo"
+
+inotifyd - \
+	"$mailpath"/Inbox/new:y \
+	"$mailpath"/Git/new:y > "$fifo" &
+
+trap "[ -e $fifo ] && rm $fifo; kill $!" EXIT HUP INT QUIT TERM
+
+while read; do
+	# pidof ffplay || ffplay -hide_banner -autoexit -nodisp "$snd" 2>&1 &
+	pidof canberra-gtk-play || canberra-gtk-play -V 10.0 -f "$snd" &
+	pidof Xorg && dunstify -r 0451 -t 3000 -i "$icon" "You've got mail!"
+done < "$fifo" > /dev/null

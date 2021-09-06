@@ -1,0 +1,16 @@
+#!/bin/sh
+
+[ "$1" ] || exit 1
+
+script="$1"
+shift
+
+## NOTE: '$script' modification is contained to within the braces
+##  due to the pipe and thus won't affect the call to 'logger'
+{
+	## Root needs the full path, hence the check
+	[ "$(id -u)" -eq 0 ] && script=/etc/periodic/"$script"
+	$script "$@"
+} | logger -t cron."$(id -un)"."$script"
+
+exit

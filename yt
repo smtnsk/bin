@@ -1,0 +1,90 @@
+#!/bin/sh
+
+## TODO:
+##  -This is ugly and makes me sad.
+##  -Set format string with -f
+##  -Set codec with -c
+##  -Set max audio quality with -q
+
+print_help()
+{
+	cat << EOF
+Options:
+    -r  max resolution (default: 720)
+    -d  download
+    -a  audio only
+    -b  audio bitrate (default: 96K); with -d only
+    -e  audio file format (default: m4a); with -d only
+    -v  print description; for YouTube videos only
+    -o  don't replace url host with "youtube.com"
+EOF
+}
+
+while getopts r:e:b:davoh opt; do
+	case $opt in
+		r|e|b)
+			eval "nextarg=\$$OPTIND"
+			if [ "${OPTARG%%[^-]*}" = "-" ] || [ ! "$nextarg" ]; then
+				printf -- "-%s needs an argument\n" "$opt"
+				exit 1
+			fi
+			## TODO: sanitize $OPTARG
+			eval "$opt=$OPTARG"
+			;;
+		d) dl=1 ;;
+		a) audio=1 ;;
+		v) descr=1 ;;
+		o) no_yt=1 ;;
+		h) print_help && exit ;;
+		*) exit 1 ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+[ ! "$1" ] && { print_help; exit; }
+
+## Parse URL
+url="$*"
+if [ ! "$no_yt" ]; then
+	## If $url doesn't include 'playlist?list' or 'watch?v' or neither
+	if [ "${url##*playlist?list*}" ] || [ "${url##*watch?v*}" ] \
+		   && ! { [ "${url##*playlist?list*}" ] && [ "${url##*watch?v*}" ]; }; then
+		url="$(echo "$*" | sed -E 's/\/\/.*\//\/\/youtube.com\//g')"
+	else
+		url="$(echo "$*" | sed -E 's/\/\/.*\//\/\/youtube.com\/watch?v=/g')"
+	fi
+fi
+
+## Whether to show video description
+if [ "$descr" ]; then
+	printf -- "---\n"
+	youtube-dl --get-description "$url"
+	printf -- "---\n"
+	sleep 0.25
+fi
+
+## Set youtube-dl format
+if [ "$audio" ]; then
+	format="bestaudio[abr<=130]"
+else
+	# format="bestvideo[height<=?${r:-720}][vcodec!=?vp9]+bestaudio[abr<=130]"
+	format="bestvideo[height<=?${r:-720}]+bestaudio[abr<=130]"
+fi
+
+## Download or play content
+if [ "$dl" ]; then
+	if [ "$audio" ]; then
+		youtube-dl -xic --add-metadata \
+			--audio-format "${e:-m4a}" --audio-quality "${b:-96K}" \
+			-f "$format" "$url" \
+			-o "%(uploader)s - %(title)s.%(ext)s" "$url"
+	else
+		youtube-dl -ic --add-metadata \
+			-f "$format" "$url" \
+			-o "%(uploader)s - %(title)s.%(ext)s"
+	fi
+elif [ "$audio" ]; then
+	mpv --no-video --ytdl-raw-options=format="$format" "$url"
+else
+	mpv --ytdl-raw-options=format="$format" "$url"
+fi

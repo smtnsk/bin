@@ -1,0 +1,7 @@
+#!/bin/sh
+
+## 'fi' layout needs to be the 'mac' variant for some reason for layout toggling to work
+# setxkbmap -model applealu_ansi -layout us,fi -variant ,mac ctrl:nocaps,grp:alt_space_toggle,apple:alupckeys,terminate:ctrl_alt_bksp
+# setxkbmap -model pc104 -layout us,fi -variant ,mac -option grp:alt_space_toggle,terminate:ctrl_alt_bksp
+
+xset r rate 250 40

@@ -1,0 +1,26 @@
+#!/bin/sh
+
+## TODO: multiple files in parallel
+##  - use 'xargs -P<n>' and 'ffmpeg -loglevel warning' ?
+print_help()
+{
+cat <<EOF
+Usage: stripaudio [-b <bitrate>] [-e <extension>] <files>
+                       ^default: 96   ^default: m4a
+EOF
+}
+
+while getopts hb:e: opt; do
+	case $opt in
+		h) print_help; exit 0 ;;
+		b) br=$OPTARG ;;
+		e) ext=$OPTARG ;;
+		*) print_help; exit 1 ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+for file; do
+	[ -f "$file" ] || { printf "'%s' is not a file\n" "$file"; continue; }
+	ffmpeg -hide_banner -i "$file" -map 0:a -vn -b:a "${br:-96}"K "${file%.*}"."${ext:-m4a}"
+done

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+bluetoothctl select 00:1A:7D:DA:71:13
+bluetoothctl power on
+
+tries=3
+while [ $tries -gt 0 ]; do
+	if ! bluetoothctl connect A4:D1:8C:EE:F5:77; then
+		wait 2
+		tries=$(( tries - 1 ))
+	else
+		break
+	fi
+done

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+max=0
+while : ; do
+	cur=$(sensors | awk '/Tdie/ {print $2}' | grep -o "[0-9.]*")
+	if [ $(echo "$cur > $max" | bc) -eq 1 ]; then
+		max=$cur
+	fi
+	printf "max temp: %s°C\r" "$max"
+	sleep 2
+done

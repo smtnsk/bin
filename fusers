@@ -1,0 +1,7 @@
+#!/bin/sh
+
+## TODO:
+##  - multiple files with one command
+##  - read files from stdin
+
+nameof $(fuser -m "$@")

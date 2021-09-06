@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if [ -r "$1" ]; then
+	cur_env="$1"
+else
+	cur_env=$(mktemp /dev/shm/"${0##*/}".XXXXXX)
+	[ $cur_env ] || cur_env=$(mktemp /tmp/"${0##*/}".XXXXXX)
+	[ $cur_env ] || exit 1
+	env > "$cur_env"
+fi
+
+emacsclient -s /home/smtnskn/.emacs.d/server/server -e '(update-env "'$cur_env'")' > /dev/null
+touch "$EMACS_ENV_CANARY"
+rm $cur_env

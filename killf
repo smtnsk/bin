@@ -1,0 +1,44 @@
+#!/bin/sh
+
+## Get all children of PID 1; select one; send it a signal (default to 15)
+
+## TODO:
+##  - stick around a second to see if the process actually gets killed
+##    - report if it's a zombie
+##  - default fzf settings
+##  - separate into 'pidwalk' script
+##  - output to file/fifo and in a loop read from it and kill pids as they appear; reload pids
+##    - fzf --bind 'ctrl-r:reload($FZF_DEFAULT_COMMAND)'
+##    - fzf --bind 'enter:kill $signal $pid'
+
+
+get_children() { pgrep -P $1 | cut -d' ' -f1; }
+
+readonly signal="-${1:-15}"
+
+set -- $(get_children 1)
+while [ "$1" ]; do
+	pid=$1
+	pids="$pids $pid"
+	shift
+
+	## The below methods perform exactly the same in benchmarks
+
+	# for child in $(get_children $pid); do
+	# 	set -- "$child" "$@"
+	# done
+
+	children="$(get_children $pid)"
+	if [ "$children" ]; then
+		set -- $children "$@"
+	fi
+done
+unset pid
+
+set -- $pids
+IFS_old=$IFS
+IFS=','
+pids="$(ps -p "$*" -o user=,pid=,comm=,args= | fzf | awk '{print $2}')"
+IFS=$IFS_old
+set -- $pids
+[ "$1" ] && kill $signal "$@"

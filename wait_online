@@ -1,0 +1,23 @@
+#!/bin/sh
+
+target="1.1.1.1"
+count=5
+delay=4
+
+while getopts t:c:d: opt; do
+	case $opt in
+		t) target=$OPTARG ;;
+		c) count=$OPTARG ;;
+		d) delay=$OPTARG ;;
+		*) exit 1 ;;
+	esac
+done
+
+while [ $count -gt 0 ]; do
+	if ping -q -c1 -w"$delay" $target; then
+		exit 0
+	fi
+	count=$((count - 1))
+done
+
+exit 1

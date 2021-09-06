@@ -1,0 +1,6 @@
+#!/bin/sh
+
+## This is a hack to call $TERMINAL on applications that can't read
+## environment variables (I'm looking at you, rofi)
+
+exec $TERMINAL "$@"

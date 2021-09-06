@@ -1,0 +1,47 @@
+#!/bin/sh
+
+if lsof -c Xorg | grep "amdgpu_drv\.so$" > /dev/null 2>&1; then
+	amdgpu=1
+fi
+
+if [ "$1" = "-s" ]; then
+	if [ "$amdgpu" ]; then
+		xrandr --output DisplayPort-0 --off \
+			   --output DisplayPort-1 --off \
+			   --output DisplayPort-2 --off \
+			   --output DisplayPort-3 --primary --mode 2560x1440 --pos 0x0 --rotate normal \
+			   --output DisplayPort-4 --off \
+			   --output HDMI-A-0 --off
+	else
+		xrandr --output DP-1 --off \
+			   --output DP-2 --off \
+			   --output DP-3 --off \
+			   --output DP-4 --primary --mode 2560x1440 --pos 0x0 --rotate normal \
+			   --output DP-5 --off \
+			   --output HDMI-1 --off
+	fi
+elif [ "$1" = "-m" ]; then
+	if [ "$amdgpu" ]; then
+		xrandr --output DisplayPort-0 --off \
+			   --output DisplayPort-1 --mode 1920x1080 --pos 0x180 --rotate normal \
+			   --output DisplayPort-2 --off \
+			   --output DisplayPort-3 --primary --mode 2560x1440 --pos 1920x0 --rotate normal \
+			   --output DisplayPort-4 --off \
+			   --output HDMI-A-0 --off
+	else
+		xrandr --output DP-1 --off \
+			   --output DP-2 --mode 1920x1080 --pos 0x180 --rotate normal \
+			   --output DP-3 --off \
+			   --output DP-4 --primary --mode 2560x1440 --pos 1920x0 --rotate normal \
+			   --output DP-5 --off \
+			   --output HDMI-1 --off
+	fi
+else
+	printf "Usage: %s -s|-m\n" "${0##*/}"
+	exit
+fi
+
+if killall -0 barriers 2> /dev/null; then
+	killall barriers
+	detach nice -n -1 /usr/bin/barriers -d NOTE -c "$XDG_CONFIG_HOME"/barrier/barriers.conf
+fi
