@@ -1,0 +1,36 @@
+#!/bin/sh
+
+cur_gov="$( cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
+govs="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors)"
+
+die()
+{
+	cat <<EOF
+${*:-Usage: ${0##*/} <scaling governor>
+
+Current governor:	$cur_gov
+Available governors:	$govs}
+EOF
+
+	exit 1
+}
+setgov()
+{
+	for gov in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+		echo "$1" > "$gov" || return 1
+	done
+}
+
+[ "$(id -u)" -ne 0 ] && { echo "Need root privileges"; exit 1; }
+[ "$#" -gt 1 ] && die
+
+input="$1"
+set -- $govs
+while [ "$1" ]; do
+	[ "$1" = "$input" ] && break
+	shift
+done
+[ "$1" ] || die
+
+setgov "$1" || die "Unable to set scaling governor"
+# [ "$1"  = "performance" ] && /usr/local/sbin/zenstates --c6-enable

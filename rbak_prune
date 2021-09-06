@@ -1,0 +1,15 @@
+#!/bin/sh
+
+[ $(id -u) -ne 0 ] && { echo "Need root privileges."; exit 1; }
+
+cd /mnt/storage/backup/URUK || exit 1
+
+## Remove folders
+fd -uut d . | while read -r dir; do
+	[ ! -e /"$dir" ] && rm -rfv "$dir"
+done
+
+## Remove files
+fd -uut f . | while read -r file; do
+	[ ! -e /"$file" ] && rm -v "$file"
+done

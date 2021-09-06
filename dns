@@ -1,0 +1,12 @@
+#!/bin/sh
+
+file=/etc/resolv.conf
+[ "$1" ] || { grep nameserver "$file" | cut -d' ' -f2; exit; }
+[ "$#" -gt 1 ] && { echo "Usage: ${0##*/} [ip address]"; exit; }
+
+[ "$(id -u)" -ne 0 ] && { echo "Need root privileges"; exit 1; }
+
+attrs=$(lsattr "$file" | cut -d' ' -f1 | tr -d '-')
+[ "$attrs" ] && chattr -"$attrs" "$file"
+printf "%s\n" "$(sed "s/nameserver.*/nameserver $*/" "$file")" > "$file"
+[ "$attrs" ] && chattr +"$attrs" "$file"

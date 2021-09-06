@@ -1,0 +1,149 @@
+#!/bin/sh
+
+## editas is a hacky poor man's sudoedit for doas
+##
+## Uses:
+##      doas, cp, ps, stat, chown, chmod, grep, sed, cut, cmp
+##
+## Configuration:
+##      -checks $DOAS_EDITOR for a preferred editor; defaults to 'vi'
+##      -doas needs to be set up to allow root to run commands as another user
+##       (for example: permit nopass root)
+##
+## Usage:
+##      editas <file>
+## As root:
+##      editas <user> <file>
+
+## TODO: Replace chained pipes and Linux-specific things with awk
+## TODO: Always allow specifying user; exit if called as root and no user was given
+## TODO: Don't create a new file until necessary. Rather check for write permission
+##	early, and later instead of asking "Save changes?" ask "Create file?"
+
+## Caller was not root
+if [ "$(id -u)" -ne 0 ]; then
+	[ -z "$1" ] && { printf "Usage: editas <file>\n"; exit 1; }
+
+	## Re-exec as root; pass along pwd, an editor, and the supposed file
+	exec doas "$0" "$PWD" "${DOAS_EDITOR:-vi}" "$*"
+
+## Exec'd as root after called by a non-root user
+elif [ $# -eq 3 ]; then
+	## Check who original caller was
+	## FIX: doas editas <file> returns the user who called editas
+	# user=$(ps -A -o user= -o pid= | grep "$PPID" | cut -d' ' -f1)
+	user=$(stat -c %U /proc/"$PPID")
+
+## Caller was root
+else
+	[ $# -ne 2 ] && { printf "Usage: editas <user> <file>\n"; exit 1; }
+
+	user="$1"
+	shift
+	set -- "$PWD" "${DOAS_EDITOR:-vi}" "$*"
+fi
+
+## Exit if $user is not valid
+if ! cut -d':' -f1 /etc/passwd | grep -q "$user"; then
+	printf "'%s' is not a valid user\n" "$user"
+	exit 1
+fi
+
+## Move to the caller's pwd
+cd "$1" || exit 1
+
+## TODO: check if the file is a symlink; if yes, use 'readlink'
+
+## Create file if it doesn't exist (better to try and fail now rather than later);
+## save full paths of the file and the temporary-copy-to-be;
+if [ ! -f "$3" ]; then
+	touch "$3" || exit
+	newfile=1
+fi
+file="$(realpath "$3")" || exit 1
+tmpcopy="$(mktemp -u).${file##*/}"
+
+## TODO: check if user already has write access to $file; if yes, exit
+
+## Copy $file into $tmpcopy; exit on fail; own the copy and limit access
+cp "$file" "$tmpcopy" || exit 1
+chown "$user":"$user" "$tmpcopy"
+chmod 600 "$tmpcopy"
+
+## Create a watchdoggy to suspend the parent shell when the editor
+## is suspended and to clean up on exit
+(
+	trap 'rm "$tmpcopy"; [ "$newfile" ] && [ ! -s "$file" ] && rm "$file"' EXIT HUP INT QUIT TERM
+
+	sleeptime="0.1"
+	noeditor=0
+
+	while kill -0 $$ 2> /dev/null; do
+		sleep "$sleeptime"
+
+		[ "$noeditor" -eq 1 ] && continue
+
+		## Wait for $DOAS_EDITOR to be launched
+		while [ -z "$edpid" ]; do
+			# edpid=$(ps -A -o pid= -o ppid= -o args= | \
+			# 			awk '$0~v <exclude awk itself> {print $1}' v="$2 $tmpcopy")
+
+			## TODO: get from /proc or replace with awk
+			edpid=$(ps -A -o ppid= -o pid= -o args= |
+				sed 's/^[[:space:]]*//g; s/\s\+/ /g' |
+				grep "^$$.*$tmpcopy" |
+				cut -d' ' -f2)
+		done
+
+		## Check editor status
+		# edstat="$(ps -A -o stat= -o pid= | grep $edpid | cut -d' ' -f1)"
+		edstat="$(cut -d' ' -f3 /proc/"$edpid"/stat 2> /dev/null)"
+		[ -z "$edstat" ] && noeditor=1 && continue
+
+		## If the editor has been suspended...
+		if [ "$(printf %.1s "$edstat")" = "T" ]; then
+			## ...suspend the parent shell...
+			kill -TSTP $$
+
+			## ...and wait until it's no longer suspended
+			while :; do
+				sleep "$sleeptime"
+				# pshstat="$(ps -A -o stat= -o pid= | grep $$ | cut -d' ' -f1)"
+				pshstat="$(cut -d' ' -f3 /proc/$$/stat)"
+				[ "$(printf %.1s "$pshstat")" != "T" ] && break
+			done
+		fi
+	done
+) &
+
+## Edit the copy
+doas -u "$user" $2 "$tmpcopy"
+
+## Ask to replace the original if changes were made
+cmp "$file" "$tmpcopy" > /dev/null 2>&1
+if [ $? -eq 1 ]; then
+	while true; do
+		printf "Save changes to '%s'? (y/n): " "${file##*/}"
+		read -r input
+		case "$input" in
+			[Yy]|[Yy]es)
+				uidgid="$(stat -c %U:%G "$file")"
+				permissions="$(stat -c %a "$file")"
+
+				cp "$tmpcopy" "$file" || exit 1
+				chown "$uidgid" "$file"
+				chmod "$permissions" "$file"
+
+				## All done!
+				exit 0
+				;;
+			[Nn]|[Nn]o)
+				break
+				;;
+			*)
+				printf "Invalid input\n"
+				;;
+		esac
+	done
+fi
+[ "$newfile" ] || printf "'%s' was not modified\n" "$file"
