@@ -1,5 +1,8 @@
 #!/bin/sh
 
+## A hack to redirect the output of a program that lacks logging facilities
+## to a file (give me those sweet, sweet logs, smtpd)
+
 exec >> "$@"
 while read -r line; do
     printf "%s\n" "$line"

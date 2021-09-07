@@ -6,7 +6,6 @@
 # 	-list existing backups
 #	-set secure permissions on created directories
 
-
 fail()
 {
 	printf "\nERROR: %s\n" "$*"
