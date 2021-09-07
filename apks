@@ -1,0 +1,24 @@
+#!/bin/sh
+
+## TODO: apply sort only if -h or -d haven't been given
+## TODO: lose the while loop
+
+world=" $(grep '^P' /lib/apk/db/installed | sed 's/P://' | sort | tr '\n' ' ') "
+[ "$world" ] || { apk search "$@" | sort; exit; }
+
+apk search "$@" | sort | while read pkg; do
+	basename="${pkg%-*-*}"
+	case "$world" in
+		*" $basename "*)
+			local_pkg="$(apk info -ev $basename)"
+			if [ "$pkg" = "$local_pkg" ]; then
+				printf "%-40s = %s\n" "$pkg" "$local_pkg"
+			else
+				printf "%-39s != %s\n" "$pkg" "$local_pkg"
+			fi
+			;;
+		*)
+			printf "%s\n" "$pkg"
+			;;
+	esac
+done
