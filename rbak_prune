@@ -2,14 +2,28 @@
 
 [ $(id -u) -ne 0 ] && { echo "Need root privileges."; exit 1; }
 
-cd /mnt/storage/backup/URUK || exit 1
+backup_root=/mnt/storage/backup
+cd "$backup_root" || exit 1
+
+if [ -d "$1" ]; then
+	backup_dir="$backup_root"/"$1"
+else
+	export FZF_DEFAULT_OPTS="--height 40% --reverse"
+	backup_dir="$backup_root"/"$(fd -uut d -d 1 | fzf --disabled)"
+fi
+
+[ "$backup_root"/ = "$backup_dir" ] && { echo "No backup selected."; exit; }
+cd "$backup_dir" || exit 1
+
+processes="$(( $(nproc) / 2 ))"
+[ $processes -eq 0 ] && processes=1
 
 ## Remove folders
 fd -uut d . | while read -r dir; do
-	[ ! -e /"$dir" ] && rm -rfv "$dir"
-done
+	[ ! -e /"$dir" ] && printf "%s\n" "$dir"
+done | xargs -P $processes -I {} rm -rfv {}
 
 ## Remove files
 fd -uut f . | while read -r file; do
-	[ ! -e /"$file" ] && rm -v "$file"
-done
+	[ ! -e /"$file" ] && printf "%s\n" "$file"
+done | xargs -P $processes -I {} rm -v {}
