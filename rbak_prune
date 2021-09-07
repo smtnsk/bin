@@ -9,7 +9,7 @@ if [ -d "$1" ]; then
 	backup_dir="$backup_root"/"$1"
 else
 	export FZF_DEFAULT_OPTS="--height 40% --reverse"
-	backup_dir="$backup_root"/"$(fd -uut d -d 1 | fzf --disabled)"
+	backup_dir="$backup_root"/"$(fd -uut d -d 1 | fzf)"
 fi
 
 [ "$backup_root"/ = "$backup_dir" ] && { echo "No backup selected."; exit; }
