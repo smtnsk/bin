@@ -1,0 +1,23 @@
+#!/bin/sh
+
+letter_n=12
+number_n=3
+special_n=3
+
+letter_str=$(tr -dc 'a-zA-Z' < /dev/urandom | fold -w $letter_n | head -n 1)
+number_str=$(tr -dc '0-9' < /dev/urandom | fold -w $number_n | head -n 1)
+
+## https://owasp.org/www-community/password-special-characters
+special_str=$(printf "%s" "!\"#$%&'()*+,-./:;<=>?@[\\]^_\`{|}~" \
+	| fold -w1 \
+	| shuf \
+	| tr -d '\n' \
+	| fold -w $special_n \
+	| head -n 1)
+
+pw=$(printf "%s" "${letter_str}${number_str}${special_str}" \
+	| fold -w1 \
+	| shuf \
+	| tr -d '\n')
+
+printf "%s\n" "$pw"
