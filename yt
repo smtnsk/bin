@@ -68,7 +68,7 @@ if [ "$audio" ]; then
 	format="bestaudio[abr<=130]"
 else
 	# format="bestvideo[height<=?${r:-720}][vcodec!=?vp9]+bestaudio[abr<=130]"
-	format="bestvideo[height<=?${r:-720}]+bestaudio[abr<=?130][acodec=?opus]"
+	format="bestvideo[height<=?${r:-720}]+bestaudio[abr<=?130]"
 fi
 
 ## Download or play content
