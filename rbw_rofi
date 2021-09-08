@@ -5,7 +5,7 @@ set -o pipefail
 
 fields="$(rbw ls --fields folder,name,user | \
 	sed 's/^[\t ]*//; s/\t/ | /' | \
-	rofi -dmenu | \
+	rofi -dmenu -i | \
 	sed 's/ |//' | \
 	xargs -r rbw get --full)"
 
