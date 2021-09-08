@@ -1,23 +1,16 @@
 #!/bin/sh
 
+## https://owasp.org/www-community/password-special-characters
+
+shuffle() { printf "%s" "$1" | fold -w1 | shuf | tr -d '\n'; }
+
 letter_n=12
 number_n=3
 special_n=3
 
-letter_str=$(tr -dc 'a-zA-Z' < /dev/urandom | fold -w $letter_n | head -n 1)
-number_str=$(tr -dc '0-9' < /dev/urandom | fold -w $number_n | head -n 1)
+number_str=$(seq 0 9 | shuf | tr -d '\n' | cut -c -${number_n})
+letter_str=$(shuffle "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+	| cut -c -${letter_n})
+special_str=$(shuffle "!\"#$%&'()*+,-./:;<=>?@[\\]^_\`{|}~" | cut -c -${special_n})
 
-## https://owasp.org/www-community/password-special-characters
-special_str=$(printf "%s" "!\"#$%&'()*+,-./:;<=>?@[\\]^_\`{|}~" \
-	| fold -w1 \
-	| shuf \
-	| tr -d '\n' \
-	| fold -w $special_n \
-	| head -n 1)
-
-pw=$(printf "%s" "${letter_str}${number_str}${special_str}" \
-	| fold -w1 \
-	| shuf \
-	| tr -d '\n')
-
-printf "%s\n" "$pw"
+printf "%s\n" $(shuffle "${number_str}${letter_str}${special_str}")
