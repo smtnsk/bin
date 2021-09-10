@@ -1,0 +1,11 @@
+#!/bin/sh
+
+IFS=':'
+set -- $(rg --line-number \
+			--column \
+			--hidden \
+			--no-heading \
+			--color=always "$@" \
+			 | fzf --ansi)
+
+[ "$1" ] && exec editor +"$2":"$3" "$1"
