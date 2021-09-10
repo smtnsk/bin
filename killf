@@ -38,7 +38,7 @@ unset pid
 set -- $pids
 IFS_old=$IFS
 IFS=','
-pids="$(ps -p "$*" -o user=,pid=,comm=,args= | fzf | awk '{print $2}')"
+pids="$(ps -p "$*" -o user=,pid=,comm=,args= | fzf -m | awk '{print $2}')"
 IFS=$IFS_old
 set -- $pids
 [ "$1" ] && kill $signal "$@"
