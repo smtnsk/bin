@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export FZF_DEFAULT_OPTS="--height 30% --reverse"
+
 die()
 {
 	usage="\
@@ -53,7 +55,7 @@ done
 mount_root=/media
 [ "$host" ] || host=$(awk '/^Host/ {print $2}' ~/.ssh/config | fzf)
 [ "$path" ] || path="$mount_root"/"$host"
-[ "$path" = "$mount_root"/ ] && { echo "No host given"; die; }
+[ "$path" = "$mount_root"/ ] && { die "No host given"; }
 
 if [ "$mount" ]; then
 	_mount
