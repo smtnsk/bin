@@ -10,4 +10,5 @@ for account_conf in "$XDG_CONFIG_HOME"/imapnotify/*.conf; do
 	goimapnotify -conf "$account_conf" > /var/log/imapnotify/"$account".log 2>&1 &
 done
 
-mbsync -a > /dev/null && emacsclient -eu '(mu4e-update-index)'
+# mbsync -a > /dev/null && emacsclient -eu '(mu4e-update-index)'
+emacsclient -eu '(mu4e-update-mail-and-index t)'
