@@ -50,8 +50,8 @@ case "$cmd" in
 		done < "$entries_file"
 
 		if [ -e "$failed_file" ]; then
-			fails="$(wc -l "$failed_file" | awk '{print $1}')"
-			cat "$failed_file" > "$entries_file"
+			chmod 600 "$failed_file"
+			mv -f "$failed_file" "$entries_file"
 		else
 			rm "$entries_file"
 		fi
@@ -67,8 +67,8 @@ case "$cmd" in
 		done < "$entries_file"
 
 		if [ -e "$failed_file" ]; then
-			cat "$failed_file" > "$entries_file"
-			wc -l "$entries_file" | awk '{print $1}'
+			chmod 600 "$failed_file"
+			mv -f "$failed_file" "$entries_file"
 		else
 			rm "$entries_file"
 		fi
