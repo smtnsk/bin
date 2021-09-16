@@ -6,33 +6,33 @@ fi
 
 if [ "$1" = "-s" ]; then
 	if [ "$amdgpu" ]; then
-		xrandr --output DisplayPort-0 --off \
+		xrandr --output DisplayPort-0 --primary --mode 1920x1080 --pos 0x0 --rotate normal \
 			   --output DisplayPort-1 --off \
 			   --output DisplayPort-2 --off \
-			   --output DisplayPort-3 --primary --mode 2560x1440 --pos 0x0 --rotate normal \
+			   --output DisplayPort-3 --off \
 			   --output DisplayPort-4 --off \
 			   --output HDMI-A-0 --off
 	else
-		xrandr --output DP-1 --off \
+		xrandr --output DP-1 --primary --mode 1920x1080 --pos 0x0 --rotate normal \
 			   --output DP-2 --off \
 			   --output DP-3 --off \
-			   --output DP-4 --primary --mode 2560x1440 --pos 0x0 --rotate normal \
+			   --output DP-4 --off \
 			   --output DP-5 --off \
 			   --output HDMI-1 --off
 	fi
 elif [ "$1" = "-m" ]; then
 	if [ "$amdgpu" ]; then
-		xrandr --output DisplayPort-0 --off \
-			   --output DisplayPort-1 --mode 1920x1080 --pos 0x180 --rotate normal \
+		xrandr --output DisplayPort-0 --primary --mode 1920x1080 --pos 2560x180 --rotate normal \
+			   --output DisplayPort-1 --off \
 			   --output DisplayPort-2 --off \
-			   --output DisplayPort-3 --primary --mode 2560x1440 --pos 1920x0 --rotate normal \
+			   --output DisplayPort-3 --mode 2560x1440 --pos 0x0 --rotate normal \
 			   --output DisplayPort-4 --off \
 			   --output HDMI-A-0 --off
 	else
-		xrandr --output DP-1 --off \
-			   --output DP-2 --mode 1920x1080 --pos 0x180 --rotate normal \
+		xrandr --output DP-1 --primary --mode 1920x1080 --pos 2560x180 --rotate normal \
+			   --output DP-2 --off \
 			   --output DP-3 --off \
-			   --output DP-4 --primary --mode 2560x1440 --pos 1920x0 --rotate normal \
+			   --output DP-4 --mode 2560x1440 --pos 1920x0 --rotate normal \
 			   --output DP-5 --off \
 			   --output HDMI-1 --off
 	fi
