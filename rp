@@ -1,0 +1,88 @@
+#!/bin/sh
+
+## rp for replicate; WIP
+
+## TODO:
+##   - do getopts and pass marked options to external commands
+##   - default options for external commands
+
+usage="Usage: ${0##*/} -s <files> -cmlre"
+die() {
+	[ "$1" ] && printf "%s\n" "$1"
+	exit 1
+}
+
+[ "$1" ] || die "$usage"
+
+entries_file="${TMPDIR:-${TMP:-/tmp}}"/"${0##*/}"_entries.txt
+failed_file="${TMPDIR:-${TMP:-/tmp}}"/"${0##*/}"_failed.txt
+
+cmd="$1"
+shift
+case "$cmd" in
+	"-s")  ## store
+		[ "$1" ] || die "$usage"
+		entries="$#"
+		if [ -e "$entries_file" ]; then
+			if [ ! -w "$entries_file" ]; then
+				printf "%s\n" "Existing $entries_file is not writable and will be deleted."
+				rm "$entries_file" || die
+				touch "$entries_file" || die
+				chmod 600 "$entries_file"
+			else
+				entries="$(wc -l "$entries_file" | awk '{print $1}') + $entries"
+			fi
+		fi
+
+		pwd=$(pwd)
+		for entry; do
+			printf "%s\n" "${pwd}/${entry}" >> "$entries_file"
+		done
+
+		printf "Stored: %s\n" "$entries"
+		;;
+	"-c")  ## copy
+		entries="$(wc -l "$entries_file" | awk '{print $1}')"
+		fails=0
+
+		while read -r entry; do
+			cp "$entry" . || printf "%s\n" "$entry" >> "$failed_file"
+		done < "$entries_file"
+
+		if [ -e "$failed_file" ]; then
+			fails="$(wc -l "$failed_file" | awk '{print $1}')"
+			cat "$failed_file" > "$entries_file"
+		else
+			rm "$entries_file"
+		fi
+
+		printf "Copied: %d/%d\n" "$(( entries - fails ))" "$entries"
+		;;
+	"-m")  ## move
+		entries="$(wc -l "$entries_file" | awk '{print $1}')"
+		fails=0
+
+		while read -r entry; do
+			mv "$entry" . || printf "%s\n" "$entry" >> "$failed_file"
+		done < "$entries_file"
+
+		if [ -e "$failed_file" ]; then
+			cat "$failed_file" > "$entries_file"
+			wc -l "$entries_file" | awk '{print $1}'
+		else
+			rm "$entries_file"
+		fi
+
+		printf "Moved: %d/%d\n" "$(( entries - fails ))" "$entries"
+		;;
+	"-l")  ## list
+		cat "$entries_file"
+		;;
+	"-r")  ## remove
+		rm -v "$entries_file"
+		;;
+	"-e")  ## edit
+		exec ${EDITOR:-vi} "$entries_file"
+		;;
+	*) die "$usage" ;;
+esac
