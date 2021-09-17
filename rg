@@ -7,11 +7,13 @@ rg_bin=/usr/bin/rg
 for arg; do
 	[ $d ] && arg=-d$arg
 	case $arg in
-		-d[1-9]) max_depth="--max-depth ${arg#*d}"; ;;
+		-d[1-9])
+			max_depth="--max-depth ${arg#*d}"
+			unset d
+			;;
 		-d) d=1 ;;
-		*) args="$args $arg"
+		*) args="$args $arg" ;;
 	esac
-	[ $depth ] && break
 done
 
-eval $rg_bin $max_depth $args
+exec $rg_bin $max_depth $args
