@@ -1,0 +1,78 @@
+#!/bin/sh
+
+## Get all children of PID 1; select one; send it a signal (default = 15)
+
+## TODO:
+##  - read PIDs from stdin
+##  - stick around a second to see if the process actually gets killed
+##    - report if it's a zombie
+##  - separate into 'pidwalk' script
+##  - tree view ?
+##  - handle $signal better
+##  - allow combning $num_ancestors with other options
+##  - allow combining $sep with other options
+##  - don't print title
+
+get_children() { pgrep -P $1 | cut -d' ' -f1; }
+
+pidwalk()
+{
+	## Set level of indentation
+	indent=""
+	ancestors=$1
+	count=$ancestors
+	shift
+	while [ "$count" -gt 0 ]; do
+		indent="$indent "
+		count=$(( count - 1 ))
+	done
+
+	## Print process information into $tmpfile
+	while [ "$1" ]; do
+		pid=$1
+		pids="$*"
+
+		set -- $(ps -p "$pid" -o user=,comm=,args=)
+		if [ $1 ]; then
+			if [ $num_ancestors ]; then
+				printf "%-9s%-6s %s  %s  " "$1" "$pid" "$ancestors" "$2"
+			elif [ $sep ]; then
+				printf "%-10s%-7s%s%-17s" "$1" "$pid" "$indent" "$2"
+			else
+				printf "%-9s%-6s%s%s  " "$1" "$pid" "$indent" "$2"
+			fi
+			shift 2
+			printf "%s\0" "$*"
+		fi
+		set -- $pids
+		shift
+
+		## Recurse through child processes
+		children="$(get_children $pid)"
+		if [ "$children" ]; then
+			pidwalk $((ancestors + 1)) $children
+		fi
+	done >> $tmpfile
+}
+
+num_ancestors=1
+while getopts his opt; do
+	case $opt in
+		h) : ;; # print help
+		i) num_ancestors= ;;
+		s) num_ancestors= ; sep=1 ;;
+		*) : ;; # print help
+	esac
+done
+
+umask 177
+signal="-${1:-15}"
+tmpfile=$(mktemp -t ${0##*/}_out.XXXXXX)
+
+trap "rm $tmpfile" 0 1 2 3 15
+
+pidwalk 0 $(get_children 1)
+
+FZF_DEFAULT_OPTS="--reverse --multi --cycle --read0"
+set -- $(fzf -m < $tmpfile | awk '{print $2}')
+[ $1 ] && kill $signal "$@"
