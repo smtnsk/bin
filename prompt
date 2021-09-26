@@ -1,0 +1,25 @@
+#!/bin/sh
+
+_pwd=$PWD
+[ "$_pwd" ] || _pwd="$(pwd)"
+
+case "$_pwd" in
+	"$HOME"*) _pwd="~${_pwd#*${HOME}}" ;;
+	*) : ;;
+esac
+
+_pwd="$(printf "%s" "$_pwd" | sed 's:\([^/]\)[^/]*/:\1/:g')"
+
+is_root=0
+[ "$(id -u)" -ne 0 ] && unset is_root
+if [ "$SSH_TTY" ]; then
+	if [ "$is_root" ]; then
+		printf "%s%s%s" '\[\e]0;\W\a\033[1;31m\]\h:' "$_pwd" ' $\[\033[00m\] '
+	else
+		printf "%s%s%s" '\[\e]0;\W\a\033[1;36m\]\h:' "$_pwd" ' $\[\033[00m\] '
+	fi
+elif [ "$is_root" ]; then
+	printf "%s%s%s" '\[\e]0;\W\a\033[1;31m\]' "$_pwd" ' $\[\033[00m\] '
+else
+	printf "%s%s%s" '\[\e]0;\W\a\033[1;36m\]' "$_pwd" ' $\[\033[00m\] '
+fi
