@@ -14,5 +14,5 @@ col="1;36m"  # cyan
 [ "$SSH_TTY" ] && host="\h:"  # print hostname if ssh'd in
 
 # PS1='\[\e]0;\W\a\033[${col}\]${host}${_pwd} \$\[\033[00m\] '
-PS1="\\[\\e]0\;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
+PS1="\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
 unset _pwd col host
