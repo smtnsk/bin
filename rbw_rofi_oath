@@ -1,13 +1,10 @@
 #!/bin/sh
 
-set -eu
-set -o pipefail
-
 fields="$(rbw ls --fields folder,name,user | \
 	sed 's/^[\t ]*//; s/\t/ | /' | \
 	rofi -dmenu -i | \
 	sed 's/ |//' | \
 	xargs -r rbw get --full)"
 
-totp=$(printf "%s" "$fields" | awk '/TOTP/ {print $3;}')
-oathtool --totp -b $totp | xsel -ip
+totp=$(printf "%s" "$fields" | awk '/TOTP/ {print $3;}' | tr -d '\n')
+oathtool --totp -b $totp | xsel -ip -t 30000
