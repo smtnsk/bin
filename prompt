@@ -1,5 +1,7 @@
 #!/bin/sh
 
+## This is sourced, not executed
+
 _pwd="$PWD"
 [ "$_pwd" ] || _pwd="$(pwd)"
 
