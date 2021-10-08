@@ -11,7 +11,7 @@ esac
 _pwd="$(printf "%s" "$_pwd" | sed 's:\([^/]\)[^/]*/:\1/:g')"
 col="1;36m"  # cyan
 [ "$(id -u)" -eq 0 ] && col="1;31m"  # red if root
-[ "$SSH_TTY" ] && host="\h:"  # print hostname if ssh'd in
+is_ssh && host="\h:"  # print hostname if ssh'd in
 
 # PS1='\[\e]0;\W\a\033[${col}\]${host}${_pwd} \$\[\033[00m\] '
 PS1="\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
