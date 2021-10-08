@@ -67,7 +67,7 @@ mkdir -p "$bak_dir" ||
 	fail "failed to create $bak_dir"
 
 printf "\n%s" "Running rsync ..."
-printf "\n<- %s\n-> %s\n" "$src" "$dest"
+printf "\n┌< %s\n└> %s\n" "$src" "$dest"
 
 ## precompiled rsync from apk doesn't support the -N flag (preserving crtimes)
 if doas rsync -cauHAUXh \
