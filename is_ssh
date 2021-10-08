@@ -1,9 +1,9 @@
 #!/bin/sh
 
-_pid=$$
-until [ $_pid -eq 1 ]; do
-	set -- $(cat /proc/"$_pid"/stat)
+_ppid=$PPID
+until [ $_ppid -eq 1 ]; do
+	set -- $(cat /proc/"$_ppid"/stat)
 	[ "$2" = "(sshd)" ] && exit 0
-	_pid=$4
+	_ppid=$4
 done
 exit 1
