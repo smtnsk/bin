@@ -78,6 +78,7 @@ for host; do
 		continue
 	fi
 
+	printf "" > "$auth_keys_new"
 	while read -r auth_key; do
 		if [ "$pub_key" != "$auth_key" ]; then
 			printf "%s\n" "$auth_key" >> "$auth_keys_new";
