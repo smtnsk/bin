@@ -3,7 +3,7 @@
 ## TODO:
 ##  - choose auth_key to replace
 
-export FZF_DEFAULT_OPTS="--height 30% --reverse"
+export FZF_DEFAULT_OPTS="--height 30% --reverse -m"
 
 name="${0##*/}"
 usage="\
@@ -74,7 +74,7 @@ hosts_n=$#
 transfers_n=0
 for host; do
 	if ! scp "$host":~/.ssh/authorized_keys "$auth_keys_old" > /dev/null; then
-		printf "%s\n" "Couldn't connect to $host; skipping ..."
+		printf "%s\n" "Couldn't transfer from $host; skipping ..."
 		continue
 	fi
 
@@ -87,7 +87,7 @@ for host; do
 	cat "$new_pub_key_file" >> "$auth_keys_new"
 
 	if ! scp "$auth_keys_new" "$host":~/.ssh/authorized_keys > /dev/null; then
-		printf "%s\n" "Couldn't connect to $host; skipping ..."
+		printf "%s\n" "Couldn't transfer to $host; skipping ..."
 		continue
 	fi
 
@@ -99,4 +99,4 @@ if [ $transfers_n -eq $hosts_n ]; then
 	mv -f "$new_pub_key_file" "$pub_key_file"
 	[ -S "$SSH_AUTH_SOCK" ] && ssh-add "$priv_key_file"
 fi
-printf "%d/%d hosts updated" "$transfers_n" "$hosts_n"
+printf "%d/%d hosts updated\n" "$transfers_n" "$hosts_n"
