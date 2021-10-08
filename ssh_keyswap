@@ -4,10 +4,9 @@
 ##  - choose auth_key to replace
 
 export FZF_DEFAULT_OPTS="--height 30% --reverse"
-name="${0##*/}"
 
-die() {
-	usage="\
+name="${0##*/}"
+usage="\
 Usage:
   $name [-n <file>] [-o <file>] [-t <host>]
 
@@ -17,28 +16,36 @@ Options:
   -o  old private key file
       defaults to selecting one interactively from ~/.ssh/
   -t  host name or address
-      defaults to interactively selecting one from ~/.ssh/config"
+      can be specified multiple times
+      defaults to interactively selecting from ~/.ssh/config"
 
-	printf "%s\n" "${1:-$usage}"
-	exit 1
+die() {
+	code=$1
+	[ "$code" -eq 1 ] && exec 1>&2
+	shift
+	for arg; do
+		printf "%s\n" "$arg"
+	done
+	exit $code
 }
 
 cd ~/.ssh || exit 1
-while getopts n:o:t: opt; do
+while getopts hn:o:t: opt; do
 	case $opt in
 		n) new_priv_key_file="$OPTARG"
 		   new_pub_key_file="new_priv_key_file".pub
 		   ;;
 		o) priv_key_file="$OPTARG" ;;
-		t) host="$OPTARG" ;;
-		*) die ;;
+		t) hosts="$hosts $OPTARG" ;;
+		*) die 0 "$usage" ;;
 	esac
 done
 
-if [ -z "$host" ] && grep -m1 "^Host" config > /dev/null; then
-	host="$(awk '/^Host/ {print $2}' config | fzf --header='Choose hosts:')"
+if [ -z "$hosts" ] && grep -m1 "^Host" config > /dev/null; then
+	hosts="$(awk '/^Host/ {print $2}' config | fzf --header='Choose hosts:')"
 fi
-[ "$host" ] || die "No host given; quitting ..."
+[ "$hosts" ] || die 1 "E: No hosts given; quitting ..."
+set -- "$hosts"
 
 auth_keys_old="$(mktemp -ut "$name".auth_keys_old.XXXXXX)"
 auth_keys_new="$(mktemp -ut "$name".auth_keys_new.XXXXXX)"
@@ -51,11 +58,11 @@ for file in "$auth_keys_old" "$auth_keys_new"; do
 done
 
 [ "$priv_key_file" ] || priv_key_file=$(fzf --header='Choose key to replace:' -e -q 'id_ !pub')
-[ "$priv_key_file" ] || die "No key given; quitting ..."
+[ "$priv_key_file" ] || die 1 "E: No key given; quitting ..."
 
 pub_key_file="$priv_key_file".pub
 [ -r "$pub_key_file" ] && pub_key="$(cat "$pub_key_file")"
-[ "$pub_key" ] || die "No public key for $priv_key_file; quitting ..."
+[ "$pub_key" ] || die 1 "E: No public key for $priv_key_file; quitting ..."
 
 if [ ! -r "$new_pub_key_file" ]; then
 	new_priv_key_file="$priv_key_file".new
@@ -63,24 +70,32 @@ if [ ! -r "$new_pub_key_file" ]; then
 	ssh-keygen -t ed25519 -a 64 -f "$new_priv_key_file" || exit 1
 fi
 
-if ! scp "$host":~/.ssh/authorized_keys "$auth_keys_old" > /dev/null; then
-	printf "%s\n" "Couldn't connect to $host; quitting ..."
-	exit 1
-fi
-
-while read -r auth_key; do
-	if [ "$pub_key" != "$auth_key" ]; then
-		printf "%s\n" "$auth_key" >> "$auth_keys_new";
+hosts_n=$#
+transfers_n=0
+for host; do
+	if ! scp "$host":~/.ssh/authorized_keys "$auth_keys_old" > /dev/null; then
+		printf "%s\n" "Couldn't connect to $host; skipping ..."
+		continue
 	fi
-done < "$auth_keys_old"
-cat "$new_pub_key_file" >> "$auth_keys_new"
 
-if scp "$auth_keys_new" "$host":~/.ssh/authorized_keys > /dev/null; then
+	while read -r auth_key; do
+		if [ "$pub_key" != "$auth_key" ]; then
+			printf "%s\n" "$auth_key" >> "$auth_keys_new";
+		fi
+	done < "$auth_keys_old"
+	cat "$new_pub_key_file" >> "$auth_keys_new"
+
+	if ! scp "$auth_keys_new" "$host":~/.ssh/authorized_keys > /dev/null; then
+		printf "%s\n" "Couldn't connect to $host; skipping ..."
+		continue
+	fi
+
+	transfers_n=$(( transfers_n + 1 ))
+done
+
+if [ $transfers_n -eq $hosts_n ]; then
 	mv -f "$new_priv_key_file" "$priv_key_file"
 	mv -f "$new_pub_key_file" "$pub_key_file"
-
 	[ -S "$SSH_AUTH_SOCK" ] && ssh-add "$priv_key_file"
-else
-	printf "%s\n" "Couldn't connect to $host; quitting ..."
-	exit 1
 fi
+printf "%d/%d hosts updated" "$transfers_n" "$hosts_n"
