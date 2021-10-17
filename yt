@@ -41,7 +41,7 @@ while getopts r:e:b:davoh opt; do
 done
 shift $((OPTIND - 1))
 
-[ ! "$1" ] && { print_help; exit; }
+[ "$1" ] || { print_help; exit; }
 
 ## Parse URL
 url="$*"
@@ -76,11 +76,13 @@ if [ "$dl" ]; then
 	if [ "$audio" ]; then
 		youtube-dl -xic --add-metadata \
 			--audio-format "${e:-m4a}" --audio-quality "${b:-96K}" \
-			-f "$format" "$url" \
-			-o "%(uploader)s - %(title)s.%(ext)s" "$url"
+			-f "$format" \
+			"$url" \
+			-o "%(uploader)s - %(title)s.%(ext)s"
 	else
 		youtube-dl -ic --add-metadata \
-			-f "$format" "$url" \
+			-f "$format" \
+			"$url" \
 			-o "%(uploader)s - %(title)s.%(ext)s"
 	fi
 elif [ "$audio" ]; then
