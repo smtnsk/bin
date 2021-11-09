@@ -14,7 +14,10 @@ _pwd="$(printf "%s" "$_pwd" | sed 's:\([^/]\)[^/]*/:\1/:g')"
 col="1;36m"  # cyan
 [ "$(id -u)" -eq 0 ] && col="1;31m"  # red if root
 is_ssh && host="\h:"  # print hostname if ssh'd in
+[ "$VIRTUAL_ENV" ] && venv="(${VIRTUAL_ENV##*/}) "  # print venv if in one
 
 # PS1='\[\e]0;\W\a\033[${col}\]${host}${_pwd} \$\[\033[00m\] '
-PS1="\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
-unset _pwd col host
+# PS1="\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
+PS1="${venv}\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
+
+unset _pwd col host venv
