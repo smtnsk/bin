@@ -6,5 +6,7 @@ fields="$(rbw ls --fields folder,name,user | \
 	sed 's/ |//' | \
 	xargs -r rbw get --full)"
 
-totp=$(printf "%s" "$fields" | awk '/TOTP/ {print $3;}' | tr -d '\n')
-oathtool --totp -b $totp | xsel -ip -t 30000
+totp="$(printf "%s" "$fields" | awk '/TOTP/ {print $3;}' | tr -d '\n')"
+totp=${totp#*secret=}
+totp=${totp%&*}
+oathtool --totp -b "$totp" | xsel -ip -t 30000
