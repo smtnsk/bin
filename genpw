@@ -1,16 +1,50 @@
 #!/bin/sh
 
+## This is silly.
+
 ## https://owasp.org/www-community/password-special-characters
 
 shuffle() { printf "%s" "$1" | fold -w1 | shuf | tr -d '\n'; }
+rand() { seq $1 $2 | shuf | head -n1; }
 
-letter_n=12
-number_n=3
-special_n=3
+letters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+numbers="0123456789"
+specials="!\"#$%&'()*+,-./:;<=>?@[\\]^_\{|}~"
 
-number_str=$(seq 0 9 | shuf | tr -d '\n' | cut -c -${number_n})
-letter_str=$(shuffle "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" \
-	| cut -c -${letter_n})
-special_str=$(shuffle "!\"#$%&'()*+,-./:;<=>?@[\\]^_\`{|}~" | cut -c -${special_n})
+len=24
+letter_min=9
+number_min=3
+special_min=3
+
+letter_n=$(rand $letter_min $(( len - number_min - special_min )))
+number_n=$(rand $number_min $(( len - letter_n - special_min)))
+special_n=$(( len - letter_n - number_n ))
+
+while [ $(( letter_n + number_n + special_n )) -lt $len ]; do
+	case $(rand 1 3) in
+		1) letter_n=$(( letter_n + 1 )) ;;
+		2) number_n=$(( number_n + 1 )) ;;
+		3) special_n=$(( special_n + 1 )) ;;
+	esac
+done
+
+# echo "letter_n = $letter_n"
+# echo "number_n = $number_n"
+# echo "special_n = $special_n"
+# echo "total = $(( letter_n + number_n + special_n ))"
+
+while [ ${#letter_str} -lt $letter_n ]; do
+	letter_str="${letter_str}"$(shuffle "$letters" | cut -c -1)
+done
+while [ ${#number_str} -lt $number_n ]; do
+	number_str="${number_str}"$(shuffle "$numbers" | cut -c -1)
+done
+while [ ${#special_str} -lt $special_n ]; do
+	special_str="${special_str}"$(shuffle "$specials" | cut -c -1)
+done
 
 printf "%s\n" $(shuffle "${number_str}${letter_str}${special_str}")
+
+# pw=$(shuffle "${number_str}${letter_str}${special_str}")
+# echo "final = ${#pw}"
+# echo "$pw"
