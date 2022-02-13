@@ -1,16 +1,13 @@
 #!/bin/sh
 
 # TODO:
-#	-trap, cleanup
-# 	-remote backup over ssh or sshfs
-# 	-list existing backups
-#	-set secure permissions on created directories
+#   -trap, cleanup
+#   -remote backup over ssh or sshfs
+#   -list existing backups
+#   -set secure permissions on created directories
+#   -prune with -p, verbose with -v
 
-fail()
-{
-	printf "\nERROR: %s\n" "$*"
-	exit 1
-}
+fail() { printf "\nERROR: %s\n" "$*"; exit 1; }
 
 readonly default_excludes="dev/*
 /media/*
@@ -29,6 +26,7 @@ readonly bak_dir=/mnt/storage/backup/"$machine"
 if [ "$1" ]; then
 	[ -e "$1" ] || fail "$1 does not exist"
 
+	prune=1
 	readonly src="$(realpath "$1")"
 	readonly dest="${bak_dir}${src%/*}"
 else
@@ -80,4 +78,9 @@ if doas rsync -cauHAUXh \
 	--exclude-from "$exclude_file" "$src" "$dest"
 then
 	printf "\n%s\n" "Backup succesfully stored in $bak_dir"
+fi
+
+if [ "$prune" ]; then
+	printf "\n%s\n" "Pruning ..."
+	rbak_prune
 fi
