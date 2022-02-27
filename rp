@@ -5,37 +5,43 @@
 ## TODO:
 ##   - do getopts and pass marked options to external commands
 ##   - default options for external commands
+##   - select entries from $entries_f with fzf for replication
+##   - export to $entries_f with a single command
+##   - store by default if no entries; ask for action (c|m|e) otherwise
+##   - choose files with fzf !!
 
 usage="Usage: ${0##*/} -s <files> -cmlre"
+
 die() {
 	[ "$1" ] && printf "%s\n" "$1"
 	exit 1
 }
 
 replicate() {
-	entries="$(wc -l "$entries_file" | awk '{print $1}')"
+	entries="$(wc -l "$entries_f" | awk '{print $1}')"
 	fails=0
-
-	while read -r entry; do
-		"$@" "$entry" . || printf "%s\n" "$entry" >> "$failed_file"
-	done < "$entries_file"
-
-	if [ -e "$failed_file" ]; then
-		chmod 600 "$failed_file"
-		mv -f "$failed_file" "$entries_file"
-	else
-		rm "$entries_file"
-	fi
-
 	action="Copied"
 	[ "$1" = "mv" ] && action="Moved"
+
+	while read -r entry; do
+		"$@" "$entry" . || printf "%s\n" "$entry" >> "$fails_f"
+	done < "$entries_f"
+
+	if [ -e "$fails_f" ]; then
+		fails="$(wc -l "$fails_f" | awk '{print $1}')"
+		chmod 600 "$fails_f"
+		mv -f "$fails_f" "$entries_f"
+	else
+		rm "$entries_f"
+	fi
+
 	printf "%s: %d/%d\n" "$action" "$(( entries - fails ))" "$entries"
 }
 
 [ "$1" ] || die "$usage"
 
-entries_file="${TMPDIR:-${TMP:-/tmp}}"/"${0##*/}"_entries.txt
-failed_file="${TMPDIR:-${TMP:-/tmp}}"/"${0##*/}"_failed.txt
+entries_f="${TMPDIR:-${TMP:-/tmp}}"/"${0##*/}"_entries.txt
+fails_f="${TMPDIR:-${TMP:-/tmp}}"/"${0##*/}"_fails.txt
 
 cmd="$1"
 shift
@@ -43,21 +49,20 @@ case "$cmd" in
 	"-s")  ## store
 		[ "$1" ] || die "$usage"
 		entries="$#"
-		if [ -e "$entries_file" ]; then
-			if [ ! -w "$entries_file" ]; then
-				printf "%s\n" \
-					"$entries_file is not writable and will be replaced."
-				rm "$entries_file" || die
-				touch "$entries_file" || die
-				chmod 600 "$entries_file"
+		if [ -e "$entries_f" ]; then
+			if [ ! -w "$entries_f" ]; then
+				printf "%s\n" "$entries_f is not writable and will be replaced."
+				rm "$entries_f" || die
+				touch "$entries_f" || die
+				chmod 600 "$entries_f"
 			else
-				entries="$(wc -l "$entries_file" | awk '{print $1}') + $entries"
+				entries="$(wc -l "$entries_f" | awk '{print $1}') + $entries"
 			fi
 		fi
 
 		pwd=$(pwd)
 		for entry; do
-			printf "%s\n" "${pwd}/${entry}" >> "$entries_file"
+			printf "%s\n" "${pwd}/${entry}" >> "$entries_f"
 		done
 
 		printf "Stored: %s\n" "$entries"
@@ -69,13 +74,13 @@ case "$cmd" in
 		replicate mv
 		;;
 	"-l")  ## list
-		cat "$entries_file"
+		cat "$entries_f"
 		;;
 	"-r")  ## remove
-		rm -v "$entries_file"
+		rm -v "$entries_f"
 		;;
 	"-e")  ## edit
-		exec ${EDITOR:-vi} "$entries_file"
+		exec ${EDITOR:-vi} "$entries_f"
 		;;
 	*) die "$usage" ;;
 esac
