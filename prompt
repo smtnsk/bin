@@ -11,13 +11,16 @@ case "$_pwd" in
 esac
 
 _pwd="$(printf "%s" "$_pwd" | sed 's:\([^/]\)[^/]*/:\1/:g')"
-col="1;36m"  # cyan
-[ "$(id -u)" -eq 0 ] && col="1;31m"  # red if root
-is_ssh && host="\h:"  # print hostname if ssh'd in
-[ "$VIRTUAL_ENV" ] && venv="(${VIRTUAL_ENV##*/}) "  # print venv if in one
+_path_col="1;36m"  # cyan
+_branch_col="1;35m"  # magenta
+[ "$(id -u)" -eq 0 ] && _path_col="1;31m"  # red if root
+is_ssh && _host="\h:"  # print hostname if ssh'd in
+[ "$VIRTUAL_ENV" ] && _venv="(${VIRTUAL_ENV##*/}) "  # print venv if in one
+_git_branch="$(git symbolic-ref --short HEAD 2> /dev/null)"
+[ "$_git_branch" ] && _git_branch=" [$_git_branch]"  # print Git branch if in one
 
 # PS1='\[\e]0;\W\a\033[${col}\]${host}${_pwd} \$\[\033[00m\] '
 # PS1="\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
-PS1="${venv}\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
+PS1="${_venv}\\[\\e]0;\\W\\a\\033[${_path_col}\\]${_host}${_pwd}\\033[${_branch_col}\\]${_git_branch} \\033[${_path_col}\\]\\$\\[\\033[00m\\] "
 
-unset _pwd col host venv
+unset _pwd _path_col _host _venv _git_branch
