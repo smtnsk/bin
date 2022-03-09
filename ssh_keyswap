@@ -2,6 +2,15 @@
 
 ## TODO:
 ##  - choose auth_key to replace
+##  - many keys at once + which key to which host
+##  - rotate keys; keep n oldest keys; rename to ssh_keyrot
+##    - add date to filename
+##    - change IdentityFile in ~/.ssh/config
+##      - or use a symlink: ~/.ssh/id_ed25519 -> ~/.ssh/<keyfile>
+##  - handle creating and transferring the first ever key to a host
+##    - try to connect without password, then ask for one and try again
+##  - one key per host? symlinks to master if one key is used for many hosts
+##  - -p, port number
 
 export FZF_DEFAULT_OPTS="--height 30% --reverse -m"
 
@@ -17,9 +26,10 @@ Options:
       defaults to selecting one interactively from ~/.ssh/
   -t  host name or address
       can be specified multiple times
-      defaults to interactively selecting from ~/.ssh/config"
+      defaults to selecting interactively from ~/.ssh/config"
 
-die() {
+die()
+{
 	code=$1
 	[ "$code" -eq 1 ] && exec 1>&2
 	shift
@@ -64,10 +74,16 @@ pub_key_file="$priv_key_file".pub
 [ -r "$pub_key_file" ] && pub_key="$(cat "$pub_key_file")"
 [ "$pub_key" ] || die 1 "E: No public key for $priv_key_file; quitting ..."
 
+
 if [ ! -r "$new_pub_key_file" ]; then
 	new_priv_key_file="$priv_key_file".new
 	new_pub_key_file="$new_priv_key_file".pub
-	ssh-keygen -t ed25519 -a 64 -f "$new_priv_key_file" || exit 1
+	key_id="$(id -un)@$(hostname)-$(date -u +'%Y-%m-%d')"
+	ssh-keygen \
+		-t ed25519 \
+		-a 64 \
+		-C "$key_id" \
+        -f "$new_priv_key_file" || exit 1
 fi
 
 hosts_n=$#
@@ -97,6 +113,7 @@ done
 if [ $transfers_n -eq $hosts_n ]; then
 	mv -f "$new_priv_key_file" "$priv_key_file"
 	mv -f "$new_pub_key_file" "$pub_key_file"
+	# [ "$key_id" ] && <replace IdentityFile in ~/.ssh/config>
 	[ -S "$SSH_AUTH_SOCK" ] && ssh-add "$priv_key_file"
 fi
 printf "%d/%d hosts updated\n" "$transfers_n" "$hosts_n"

@@ -6,6 +6,8 @@
 ## Usecase 2: open multiple files with bin or xdg-open; <bin> <files>
 ## Usecase 3: open multiple files in parallel with bin or xdg-open; -p
 
+## TODO: 'opf' gets written to history before '$bin "$@"'
+
 while getopts dhi:p opt; do
 	case $opt in
 		h) : ;;  # TODO: print help
@@ -62,6 +64,6 @@ if [ "$1" ]; then
 	# set -o history  # bashism
 	# history -s $bin "$@"  # bashism
 	# print -s "%s %s" "$bin" "$*"  # kshism
-	printf "%s \"%s\"\n" "$bin" "$*" | tee -a "$HISTFILE"  # TODO: deduplication
+	printf "%s \"%s\"\n" "$bin" "$*" | tee -a "$HISTFILE" 2> /dev/null
 	$bin "$@"
 fi

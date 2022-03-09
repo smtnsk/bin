@@ -1,0 +1,4 @@
+#!/bin/sh
+
+(flatpak run io.lbry.lbry-app > /dev/null 2>&1; pkill lbrynet) &
+exit

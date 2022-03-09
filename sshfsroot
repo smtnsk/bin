@@ -27,9 +27,7 @@ _mount()
 	chmod 770 "$path"
 	sshfs -o allow_other,workaround=renamexdev "$host":/ "$path"
 }
-_umount() {
-	umount "$path" && rmdir "$path"
-}
+_umount() {	umount "$path" && rmdir "$path"; }
 
 [ "$(id -u)" -ne 0 ] && die "Need root privileges"
 [ "$1" ] || die

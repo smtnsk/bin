@@ -1,11 +1,30 @@
 #!/bin/sh
 
-bluetoothctl select 00:1A:7D:DA:71:13
+## place devices in ~/.config/btcon/devices.conf
+## choose with fzf
+## remember selection
+## print info while connecting
+## options to:
+##  - connect
+##  - disconnect
+##  - change device
+##  - turn off / on bluetooth
+##  - scan, pair, trust and add to devices.conf with alias
+##  - change / override number of tries (0 == infinite)
+
+URUK="00:1A:7D:DA:71:13"
+
+VMK20="C4:6E:7B:16:FD:6E"
+NIPPUR="A4:D1:8C:EE:F5:77"
+
+selection=$NIPPUR
+
+bluetoothctl select $URUK
 bluetoothctl power on
 
 tries=3
 while [ $tries -gt 0 ]; do
-	if ! bluetoothctl connect A4:D1:8C:EE:F5:77; then
+	if ! bluetoothctl connect $selection; then
 		wait 2
 		tries=$(( tries - 1 ))
 	else

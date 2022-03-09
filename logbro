@@ -3,6 +3,7 @@
 ## A hack to redirect the output of a program that lacks logging facilities
 ## to a file (give me those sweet, sweet logs, smtpd)
 
+## -d for date
 if [ "$1" = "-d" ]; then
 	shift
 	exec >> "$@"

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+## TODO:
+##   - verbose, -v
+
 [ $(id -u) -ne 0 ] && { echo "Need root privileges."; exit 1; }
 
 backup_root=/mnt/storage/backup

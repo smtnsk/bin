@@ -1,13 +1,14 @@
 #!/bin/sh
 
-wait_online > /dev/null || { notify-send -u critical "No Internet connection"; exit 1; }
+wait_online > /dev/null || \
+	{ notify-send -u critical "No Internet connection"; exit 1; }
 killall goimapnotify > /dev/null 2>&1
 wait
 
 for account_conf in "$XDG_CONFIG_HOME"/imapnotify/*.conf; do
 	account="${account_conf##*/}"
 	account="${account%.*}"
-	goimapnotify -conf "$account_conf" > /var/log/imapnotify/"$account".log 2>&1 &
+	goimapnotify -conf "$account_conf" >> /var/log/imapnotify/"$account".log 2>&1 &
 done
 
 # mbsync -a > /dev/null && emacsclient -eu '(mu4e-update-index)'
