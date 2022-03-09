@@ -4,7 +4,7 @@ export FZF_DEFAULT_OPTS="--height 30% --reverse"
 
 die()
 {
-	usage="\
+    usage="\
 Usage:
   ${0##*/} -mu [-p <path>] [-t <host>]
 
@@ -16,39 +16,39 @@ Options:
   -t --target  sshfs host name or address
                defaults to interactively selecting one from '~/.ssh/config'"
 
-	printf "%s\n" "${1:-$usage}"
-	exit 1
+    printf "%s\n" "${1:-$usage}"
+    exit 1
 }
 
 _mount()
 {
-	[ -d "$path" ] || { mkdir "$path" || exit 1; }
-	chown root:wheel "$path"
-	chmod 770 "$path"
-	sshfs -o allow_other,workaround=renamexdev "$host":/ "$path"
+    [ -d "$path" ] || { mkdir "$path" || exit 1; }
+    chown root:wheel "$path"
+    chmod 770 "$path"
+    sshfs -o allow_other,workaround=renamexdev "$host":/ "$path"
 }
-_umount() {	umount "$path" && rmdir "$path"; }
+_umount() { umount "$path" && rmdir "$path"; }
 
 [ "$(id -u)" -ne 0 ] && die "Need root privileges"
 [ "$1" ] || die
 
 while getopts mup:t:-: opt; do
-	case $opt in
-		m) mount=1 ;;
-		u) umount=1 ;;
-		p) path="$OPTARG" ;;
-		t) host="$OPTARG" ;;
-		-)
-			case $OPTARG in
-				mount) mount=1 ;;
-				umount) umount=1 ;;
-				path) path="$OPTARG" ;;
-				target) host="$OPTARG" ;;
-				*) die ;;
-			esac
-			;;
-		*) die ;;
-	esac
+    case $opt in
+        m) mount=1 ;;
+        u) umount=1 ;;
+        p) path="$OPTARG" ;;
+        t) host="$OPTARG" ;;
+        -)
+            case $OPTARG in
+                mount) mount=1 ;;
+                umount) umount=1 ;;
+                path) path="$OPTARG" ;;
+                target) host="$OPTARG" ;;
+                *) die ;;
+            esac
+            ;;
+        *) die ;;
+    esac
 done
 mount_root=/media
 [ "$host" ] || host=$(awk '/^Host/ {print $2}' ~/.ssh/config | fzf)
@@ -56,9 +56,9 @@ mount_root=/media
 [ "$path" = "$mount_root"/ ] && { die "No host given"; }
 
 if [ "$mount" ]; then
-	_mount
+    _mount
 elif [ "$umount" ]; then
-	_umount
+    _umount
 else
-	die
+    die
 fi
