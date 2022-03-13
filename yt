@@ -2,7 +2,7 @@
 
 ## TODO:
 ##  -This is ugly and makes me sad.
-##  -Set format string with -f
+##  -Set format string with -f (or leave empty to not set it at all)
 ##  -Set codec with -c
 ##  -Set max audio quality with -q
 
@@ -66,6 +66,8 @@ fi
 ## Set youtube-dl format
 if [ "$audio" ]; then
 	format="bestaudio[abr<=130]"
+elif [ "$no_yt" ]; then
+	format="37/22/18/best"
 else
 	# format="bestvideo[height<=?${r:-720}][vcodec!=?vp9]+bestaudio[abr<=130]"
 	format="bestvideo[height<=?${r:-720}]+bestaudio[abr<=?130]"
