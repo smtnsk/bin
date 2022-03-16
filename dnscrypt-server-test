@@ -1,0 +1,41 @@
+#!/bin/sh
+
+time_out=${1:-1}
+
+dnscrypt_conf=/etc/dnscrypt-proxy/dnscrypt-proxy.toml
+servers="$(dnscrypt-proxy -list -config "$dnscrypt_conf" 2> /dev/null)"
+json_out="$(dnscrypt-proxy -list -json -config "$dnscrypt_conf" 2> /dev/null)"
+
+for server in $servers; do
+    set -- $(printf "%s\n" "$json_out" | \
+        jq -cr --arg server "$server" '.[] | select(.name == $server) | [.name, .addrs, .ports]' | \
+        tr -d '[]"' | \
+        tr ',' ' ')
+
+    name=$1
+    shift
+    while [ $1 ]; do
+        case $1 in
+            *.*.*.*) [ $addr ] || addr=$1 ;;  # IP
+            *.*) ;;                           # URL
+            *) [ $port ] || port=$1 ;;        # port
+        esac
+        shift
+    done
+
+    ping_out=$(ping -c 1 -W $time_out ${addr}:${port} | \
+       head -n2 | \
+       tr -d '\n' | \
+       sed 's/PING//' | \
+       sed 's/time=//' | \
+       awk '{print $1,$11}')
+
+    set -- $ping_out
+    if [ $2 ]; then
+        printf "%s %s\n" "$name" "$ping_out"
+    else
+        printf "%s %s\n" "$name" "TIME OUT"
+    fi
+
+    unset name addr port
+done | sort -nk 3
