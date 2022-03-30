@@ -18,11 +18,16 @@ _pwd="$(printf "%s" "$_pwd" | sed 's:\([^/]\)[^/]*/:\1/:g')"  # print shortened 
 is_ssh && _host="\h:"  # print hostname if ssh'd in
 [ "$VIRTUAL_ENV" ] && _venv="(${VIRTUAL_ENV##*/}) "  # print venv if in one
 _git_branch="$(git symbolic-ref --short HEAD 2> /dev/null)"
-[ "$_git_branch" ] && _git_branch=" [$_git_branch]"  # print Git branch if in one
+if [ $? -ne 0 ]; then
+	_git_tag="$(git describe --tags 2> /dev/null)"
+	[ "$_git_tag" ] && _git=" [t: $_git_tag]"  # print Git tag if in one
+elif [ "$_git_branch" ]; then
+	_git=" [$_git_branch]"  # print Git branch if in one
+fi
 
 # PS1='\[\e]0;\W\a\033[${col}\]${host}${_pwd} \$\[\033[00m\] '
 # PS1="\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
 # PS1="${_venv}\\[\\e]0;\\W\\a\\033[${_path_col}\\]${_host}${_pwd} \\$\\[\\033[00m\\] "
-PS1="${_venv}\\[\\e]0;\\W\\a\\[\\033[${_path_col}\\]${_host}${_pwd}\\[\\033[${_branch_col}\\]${_git_branch} \\[\\033[${_path_col}\\]\\$\\[\\033[00m\\] "
+PS1="${_venv}\\[\\e]0;\\W\\a\\[\\033[${_path_col}\\]${_host}${_pwd}\\[\\033[${_branch_col}\\]${_git} \\[\\033[${_path_col}\\]\\$\\[\\033[00m\\] "
 
-unset _path_col _branch_col _pwd _host _venv _git_branch
+unset _path_col _branch_col _pwd _host _venv _git_branch _git_tag _git
