@@ -1,0 +1,11 @@
+#!/bin/sh
+
+## TODO: trap -> erase line on quit
+
+cols=$(tput cols)
+while :; do
+	for symbol in "|" "/" "-" "\\"; do
+		printf "\r%s Processing ... \033[%dC" "$symbol" "$cols"
+		sleep 0.15
+	done
+done
