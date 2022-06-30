@@ -1,0 +1,38 @@
+#!/bin/sh
+
+## TODO: figure out how to replace "print -n" with "printf" to make this usable on Bash
+
+## This is sourced, not executed
+if [ $TERM = "dumb" ]; then
+    print -n "$ "
+else
+	_pwd="$PWD"
+	[ "$_pwd" ] || _pwd="$(pwd)"
+
+	case "$_pwd" in
+		"$HOME"*) _pwd="~${_pwd#*${HOME}}" ;;
+		*) : ;;
+	esac
+
+	_path_col="1;36m"  # cyan
+	[ "$(id -u)" -eq 0 ] && _path_col="1;31m"  # red if root
+	_branch_col="1;35m"  # magenta
+
+	_pwd="$(printf "%s" "$_pwd" | sed 's:\([^/]\)[^/]*/:\1/:g')"  # print shortened pwd
+	is_ssh 2> /dev/null && _host="\h:"  # print hostname if ssh'd in
+	[ "$VIRTUAL_ENV" ] && _venv="(${VIRTUAL_ENV##*/}) "  # print venv if in one
+	_git_branch="$(git symbolic-ref --short HEAD 2> /dev/null)"
+	if [ $? -ne 0 ]; then
+		_git_tag="$(git describe --tags 2> /dev/null)"
+		[ "$_git_tag" ] && _git=" [t: $_git_tag]"  # print Git tag if in one
+	elif [ "$_git_branch" ]; then
+		_git=" [$_git_branch]"  # print Git branch if in one
+	fi
+
+	# print -n "\[\e]0;\W\a\033[${col}\]${host}${_pwd} \$\[\033[00m\] "
+	# print -n "\[\e]0;\W\a\033[${col}\]${host}${_pwd} \$\[\033[00m\] "
+	# print -n "\[\e]0;${_venv}\W\a\033[${_path_col}\]${_host}${_pwd} \$\[\033[00m\] "
+	print -n "\[\e]0;${_venv}\W\a\[\033[${_path_col}\]${_host}${_pwd}\[\033[${_branch_col}\]${_git} \[\033[${_path_col}\]\$\[\033[00m\] "
+
+	unset _path_col _branch_col _pwd _host _venv _git_branch _git_tag _git
+fi
