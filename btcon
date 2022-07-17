@@ -11,20 +11,37 @@
 ##  - turn off / on bluetooth
 ##  - scan, pair, trust and add to devices.conf with alias
 ##  - change / override number of tries (0 == infinite)
+##  - tab completion
+##  - print alignment
+##  - multiple devices
+##    - bluetoothctl can only control one device at a time
+##      - use a loop
 
-URUK="00:1A:7D:DA:71:13"
+. "$XDG_CONFIG_HOME"/btcon/devices.conf || exit 1
 
-VMK20="C4:6E:7B:16:FD:6E"
-NIPPUR="A4:D1:8C:EE:F5:77"
+CMD=connect
 
-selection=$NIPPUR
+for opt; do
+    if [ $opt = "-d" ]; then
+        CMD=disconnect
+    else
+        eval "opt=\$$opt"
+        SELECTION="$SELECTION $opt"
+    fi
+    unset opt
+    shift
+done
 
-bluetoothctl select $URUK
+if [ -z $SELECTION ]; then
+    SELECTION=$(printf "%s\n" "$DEVICES" | sed 's/=/ /' | fzf)
+fi
+
+bluetoothctl select $HOST || exit 1
 bluetoothctl power on
 
 tries=3
 while [ $tries -gt 0 ]; do
-	if ! bluetoothctl connect $selection; then
+	if ! bluetoothctl $CMD ${SELECTION#* }; then
 		wait 2
 		tries=$(( tries - 1 ))
 	else
