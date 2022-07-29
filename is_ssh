@@ -2,8 +2,10 @@
 
 _ppid=$PPID
 until [ $_ppid -eq 1 ]; do
-	set -- $(cat /proc/"$_ppid"/stat)
-	[ "${2#*sshd}" ] && exit 0
-	_ppid=$4
+        set -- $(cat /proc/"$_ppid"/stat)
+        case "$2" in
+        *sshd*) exit 0 ;;
+        *) _ppid=$4
+    esac
 done
 exit 1
