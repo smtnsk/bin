@@ -9,6 +9,7 @@
 ##   - export to $entries_f with a single command
 ##   - store by default if no entries; ask for action (c|m|e) otherwise
 ##   - choose files with fzf !!
+##   - read files from stdin
 
 usage="Usage: ${0##*/} -s <files> -cmlre"
 
