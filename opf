@@ -6,7 +6,36 @@
 ## Usecase 2: open multiple files with bin or xdg-open; <bin> <files>
 ## Usecase 3: open multiple files in parallel with bin or xdg-open; -p
 
-## TODO: 'opf' gets written to history before '$bin "$@"'
+## TODO:
+##   - 'opf' gets written to history before '$bin "$@"'
+##   - use as a file system navigator
+##     - print pwd on the first line
+##     - ^G to cd to dir
+##   - actions
+##     - delete selected items with ^X
+##     - copy selected items with ^P
+##     - move selected items with ^V
+##     - ^T to show full time
+##     - ^O to show ACL
+##     - ^I to show ACL+full time
+##     - ^H to show hidden
+##   - control what to show by default with opts
+##   - previews
+##     - 'ls' if dir (tree?)
+##     - 'less' and 'uchardet' if text
+##     - 'mediainfo' if audio/video/image
+##     - 'man' if manual page
+##     - if archive, list contents with appropriate tool ('tar', 'unzip', ...)
+##     - 'file' otherwise
+##     - shift+pgup/down to scroll preview
+##   - opt '-D/--depth n' to control max depth
+##     - change at runtime with ^M ?
+##   - Git integration: preview shows 'git diff HEAD~1' for the file?
+
+## Examples:
+##   alias pf="fzf --preview='less {}' --bind shift-up:preview-page-up,shift-down:preview-page-down"
+##   fcd()
+##   fgit()
 
 while getopts dhi:p opt; do
 	case $opt in
