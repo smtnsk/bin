@@ -8,8 +8,8 @@ for pid; do
 done
 
 readonly snd=/home/smtnskn/media/audio/sounds/TRIOP16_norm.wav
-readonly icon=/usr/share/icons/Adwaita/24x24/legacy/mail-unread.png
-# readonly icon=/usr/share/icons/Adwaita/24x24/legacy/mail-read.png
+readonly icon=/usr/share/icons/mate/24x24/emblems/emblem-mail.png
+# readonly icon=/usr/share/icons/Adwaita/24x24/legacy/mail-unread.png
 readonly mailpath="$MAILDIR"/wilywily
 
 fifo=$(mktemp -u /dev/shm/"$name".XXXXXX)
