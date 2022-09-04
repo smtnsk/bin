@@ -1,0 +1,4 @@
+#!/bin/sh
+
+## '$ xinput --list' to get devices
+xinput --set-button-map 8 3 2 1
