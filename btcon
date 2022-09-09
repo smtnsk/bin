@@ -17,9 +17,10 @@
 ##    - bluetoothctl can only control one device at a time
 ##      - use a loop
 
-. "$XDG_CONFIG_HOME"/btcon/devices.conf || exit 1
-
+CONF="$XDG_CONFIG_HOME"/btcon/devices.conf
 CMD=connect
+
+. "$CONF" || exit 1
 
 for opt; do
     if [ $opt = "-d" ]; then
@@ -33,8 +34,10 @@ for opt; do
 done
 
 if [ -z $SELECTION ]; then
-    SELECTION=$(printf "%s\n" "$DEVICES" | sed 's/=/ /' | fzf)
+    # SELECTION=$(printf "%s\n" "$DEVICES" | sed 's/=/ /' | fzf)
+    SELECTION=$(grep -v HOST "$CONF" | awk 'NF' | sed 's/=/ /' | fzf)
 fi
+[ "$SELECTION" ] || exit 1
 
 bluetoothctl select $HOST || exit 1
 bluetoothctl power on
