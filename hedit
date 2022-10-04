@@ -1,0 +1,22 @@
+#!/bin/sh
+
+[ "$HISTFILE" ] || { printf "Please set \$HISTFILE\n"; exit; }
+
+tmpfile=/tmp/history.$$
+
+trap 'rm $tmpfile' 0 1 2 3 15
+
+tac "$HISTFILE" > $tmpfile || exit 1
+tmphash="$(sha256sum $tmpfile)"
+
+(
+    while ps -p $$ > /dev/null; do
+        sleep 1
+    done
+
+    if [ "$(sha256sum $tmpfile)" != "$tmphash" ]; then
+        tac $tmpfile > "$HISTFILE" && rm $tmpfile
+    fi
+) &
+
+exec $EDITOR "$tmpfile"
