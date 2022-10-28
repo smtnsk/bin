@@ -1,0 +1,18 @@
+#!/bin/sh
+
+## Get device IDs
+set -- $(xinput --list --short \
+             | awk '1;/keyboard/{exit}' \
+             | grep -v "Virtual" \
+             | grep -Eo id=[0-9]+ \
+             | sed 's/.*=//')
+
+for id; do
+    if [ $(xinput get-button-map $id | cut -d' ' -f1) -eq 1 ]; then
+        ## Right -> Left
+        xinput --set-button-map $id 3 2 1
+    else
+        ## Left -> Right
+        xinput --set-button-map $id 1 2 3
+    fi
+done
