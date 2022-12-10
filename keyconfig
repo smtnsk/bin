@@ -1,7 +1,29 @@
 #!/bin/sh
 
-## 'fi' layout needs to be the 'mac' variant for some reason for layout toggling to work
-# setxkbmap -model applealu_ansi -layout us,fi -variant ,mac ctrl:nocaps,grp:alt_space_toggle,apple:alupckeys,terminate:ctrl_alt_bksp
+## TODO:
+##  - specify multiple types ($ keyconfig apple {vcon,x})
+##  - loadkeys with custom maps
+
 # setxkbmap -model pc104 -layout us,fi -variant ,mac -option grp:alt_space_toggle,terminate:ctrl_alt_bksp
 
-xset r rate 250 40
+DELAY=250
+RATE=40
+
+case "$1" in
+    apple)
+        ## TODO: hid_apple options
+
+        ## 'fi' layout needs to be the 'mac' variant for some reason for
+        ## layout toggling to work
+        setxkbmap -model applealu_ansi \
+                  -layout us,fi \
+                  -variant ,mac \
+                  ctrl:nocaps,grp:alt_space_toggle,apple:alupckeys,terminate:ctrl_alt_bksp
+        ;;
+    vcon)
+        doas kbdrate -d $DELAY -r $RATE ;;
+    x)
+        xset r rate $DELAY $RATE ;;
+    *)
+        xset r rate $DELAY $RATE ;;
+esac
