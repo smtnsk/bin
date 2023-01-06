@@ -9,8 +9,9 @@ if ! type "$locker" > /dev/null 2>&1; then
 fi
 if pidof "$locker"; then exit; fi
 
+cur_gov="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
 doas setgov schedutil
-trap 'doas setgov performance' 0 1 2 3 15
+trap 'doas setgov $cur_gov' 0 1 2 3 15
 
 case $locker in
 	sxlock)
@@ -29,8 +30,8 @@ case $locker in
 		XSECURELOCK_SHOW_HOSTNAME=0 \
 		XSECURELOCK_FONT='-misc-fixed-bold-*-*-*-18-*-*-*-*-*-*-*' \
 		XSECURELOCK_LIST_VIDEOS_COMMAND='find /home/smtnskn/media/video/xsecurelock -type f' \
-		xsecurelock > /dev/null 2>&1
-		# xsecurelock saver_mpv > /dev/null 2>&1"
+		    xsecurelock > /dev/null 2>&1
+		    # xsecurelock saver_mpv > /dev/null 2>&1"
 		;;
 	*)
 		echo "Unknown locker.";
