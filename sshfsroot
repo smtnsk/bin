@@ -14,7 +14,8 @@ Options:
   -p --path    mount point for sshfs host
                defaults to '/media/<host>'
   -t --target  sshfs host name or address
-               defaults to interactively selecting one from '~/.ssh/config'"
+               defaults to interactively selecting one from '~/.ssh/config'
+  -v --verbose"
 
     printf "%s\n" "${1:-$usage}"
     exit 1
@@ -25,25 +26,27 @@ _mount()
     [ -d "$path" ] || { mkdir "$path" || exit 1; }
     chown root:wheel "$path"
     chmod 770 "$path"
-    sshfs -o allow_other,workaround=renamexdev "$host":/ "$path"
+    sshfs -o allow_other,workaround=renamexdev "$host":/ "$path" ${verbose:+-v}
 }
 _umount() { umount "$path" && rmdir "$path"; }
 
 [ "$(id -u)" -ne 0 ] && die "Need root privileges"
 [ "$1" ] || die
 
-while getopts mup:t:-: opt; do
+while getopts mup:t:-:v opt; do
     case $opt in
         m) mount=1 ;;
         u) umount=1 ;;
         p) path="$OPTARG" ;;
         t) host="$OPTARG" ;;
+        v) verbose=1 ;;
         -)
             case $OPTARG in
                 mount) mount=1 ;;
                 umount) umount=1 ;;
                 path) path="$OPTARG" ;;
                 target) host="$OPTARG" ;;
+                verbose) verbose=1 ;;
                 *) die ;;
             esac
             ;;
