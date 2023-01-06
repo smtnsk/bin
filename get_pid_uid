@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "$1" = "-n" ]; then
+    uid=$(grep Uid /proc/$2/status | awk '{print $2}')
+    grep $uid /etc/passwd | cut -d':' -f1
+else
+    grep Uid /proc/$1/status | awk '{print $2}'
+fi

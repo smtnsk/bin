@@ -1,0 +1,20 @@
+#!/bin/sh
+
+[ $(id -u) -ne 0 ] && { echo "Need root privileges."; exit 1; }
+
+tty=$(cat /sys/class/tty/tty0/active)
+for pid in $(pgrep -t $tty | awk '{print $1}'); do
+    # disp=$(grep -z DISPLAY /proc/$pid/environ | cut -d'=' -f2)
+    # disp=$(tr '\0' '\n' < /proc/${pid}/environ | grep DISPLAY | cut -d'=' -f2)
+    # xauth=$(tr '\0' '\n' < /proc/${pid}/environ | grep XAUTHORITY | cut -d'=' -f2)
+    disp=$(tr '\0' '\n' < /proc/${pid}/environ | grep "^DISPLAY=")
+
+    if [ "$disp" ]; then
+        xauth=$(tr '\0' '\n' < /proc/${pid}/environ | grep "^XAUTHORITY")
+        xuser=$(tr '\0' '\n' < /proc/${pid}/environ | grep "^USER=")
+        # xuser=$(get_pid_uid -n $pid)
+        # printf "%s\n%s\n_xuser=%s\n" "$disp" "$xauth" "$xuser"
+        printf "%s\n%s\n%s\n" "$disp" "$xauth" "$xuser"
+        break
+    fi
+done
