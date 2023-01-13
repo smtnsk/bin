@@ -1,0 +1,20 @@
+#!/bin/sh
+
+RESTIC_PASSWORD="$(rbw get RESTIC $(hostname))"
+args="$*"
+
+if [ "$1" = "backup" ]; then
+    doas sh -c "\
+        RESTIC_COMPRESSION=$RESTIC_COMPRESSION \
+        RESTIC_PACK_SIZE=$RESTIC_PACK_SIZE \
+        RESTIC_PASSWORD="$RESTIC_PASSWORD" \
+        RESTIC_REPOSITORY="$RESTIC_REPOSITORY" \
+        restic ${RESTIC_EXCLUDE_FILE:+--exclude-file "$RESTIC_EXCLUDE_FILE"} $args"
+else
+    doas sh -c "\
+        RESTIC_COMPRESSION=$RESTIC_COMPRESSION \
+        RESTIC_PACK_SIZE=$RESTIC_PACK_SIZE \
+        RESTIC_PASSWORD="$RESTIC_PASSWORD" \
+        RESTIC_REPOSITORY="$RESTIC_REPOSITORY" \
+        restic $args"
+fi
