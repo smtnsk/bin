@@ -20,7 +20,7 @@ Options:
 EOF
 }
 
-while getopts r:e:b:davoh opt; do
+while getopts r:e:b:davofh opt; do
 	case $opt in
 		r|e|b)
 			eval "nextarg=\$$OPTIND"
@@ -35,6 +35,7 @@ while getopts r:e:b:davoh opt; do
 		a) audio=1 ;;
 		v) descr=1 ;;
 		o) no_yt=1 ;;
+        f) choose_format=1 ;;
 		h) print_help && exit ;;
 		*) exit 1 ;;
 	esac
@@ -58,16 +59,18 @@ fi
 ## Whether to show video description
 if [ "$descr" ]; then
 	printf -- "---\n"
-	youtube-dl --get-description "$url"
+	youtube-dl --get-description "$url" --downloader aria2c
 	printf -- "---\n"
 	sleep 0.25
 fi
 
 ## Set youtube-dl format
-if [ "$audio" ]; then
+if [ "$choose_format" ] || [ "$no_yt" ]; then
+    format=$(youtube-dl -q --list-formats "$url" | fzf | awk '{print $1'})
+elif [ "$audio" ]; then
 	format="bestaudio[abr<=130]"
-elif [ "$no_yt" ]; then
-	format="37/22/18/best"
+# elif [ "$no_yt" ]; then
+# 	format="37/22/18/best"
 else
 	# format="bestvideo[height<=?${r:-720}][vcodec!=?vp9]+bestaudio[abr<=130]"
 	format="bestvideo[height<=?${r:-720}]+bestaudio[abr<=?130]"
@@ -75,20 +78,30 @@ fi
 
 ## Download or play content
 if [ "$dl" ]; then
-	if [ "$audio" ]; then
+	if [ "$audio" ] && [ ! "$no_yt" ]; then
 		youtube-dl -xic --add-metadata \
 			--audio-format "${e:-m4a}" --audio-quality "${b:-96K}" \
 			-f "$format" \
 			"$url" \
-			-o "%(uploader)s - %(title)s.%(ext)s"
+			-o "%(uploader)s - %(title)s.%(ext)s" \
+            --downloader aria2c
 	else
 		youtube-dl -ic --add-metadata \
 			-f "$format" \
 			"$url" \
-			-o "%(uploader)s - %(title)s.%(ext)s"
+			-o "%(uploader)s - %(title)s.%(ext)s" \
+            --downloader aria2c
+
+        if [ "$audio" ] && [ "$no_yt" ]; then
+            filename="$(youtube-dl -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
+            stripaudio "$filename"
+            rm "$filename"
+        fi
 	fi
 elif [ "$audio" ]; then
-	mpv --no-video --ytdl-raw-options=format="$format" "$url"
+	mpv --no-video --ytdl-raw-options=format="$format",downloader=aria2c "$url"
+    # mpv --no-video --ytdl-raw-options=format="$format" "$url"
 else
-	mpv --ytdl-raw-options=format="$format" "$url"
+	mpv --ytdl-raw-options=format="$format",downloader=aria2c "$url"
+    # mpv --ytdl-raw-options=format="$format" "$url"
 fi
