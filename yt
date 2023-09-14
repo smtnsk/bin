@@ -17,10 +17,11 @@ Options:
     -e  audio file format (default: m4a); with -d only
     -v  print description; for YouTube videos only
     -o  don't replace url host with "youtube.com"
+    -s  expand shortened URL
 EOF
 }
 
-while getopts r:e:b:davofh opt; do
+while getopts r:e:b:davofhs opt; do
 	case $opt in
 		r|e|b)
 			eval "nextarg=\$$OPTIND"
@@ -36,6 +37,7 @@ while getopts r:e:b:davofh opt; do
 		v) descr=1 ;;
 		o) no_yt=1 ;;
         f) choose_format=1 ;;
+        s) short=1 ;;
 		h) print_help && exit ;;
 		*) exit 1 ;;
 	esac
@@ -46,6 +48,7 @@ shift $((OPTIND - 1))
 
 ## Parse URL
 url="$*"
+[ "$short" ] && url=$(wget –spider -S "$url" 2>&1 | grep ^Location | awk '{print $2}')
 if [ ! "$no_yt" ]; then
 	## If $url doesn't include 'playlist?list' or 'watch?v' or neither
 	if [ "${url##*playlist?list*}" ] || [ "${url##*watch?v*}" ] \
