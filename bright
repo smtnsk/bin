@@ -1,0 +1,11 @@
+#!/bin/sh
+
+
+if [ "$1" = "get" ] || [ -z "$1" ]; then
+    ddcutil getvcp 10
+elif [ "$1" = "set" ] || printf "%d" "$1" > /dev/null 2>&1; then
+    [ "$#" -gt 1 ] && shift
+    ddcutil setvcp 10 "$@"
+else
+    printf "Usage: bright get | set <n>\n"
+fi
