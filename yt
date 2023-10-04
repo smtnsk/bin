@@ -49,6 +49,14 @@ shift $((OPTIND - 1))
 ## Parse URL
 url="$*"
 [ "$short" ] && url=$(wget –spider -S "$url" 2>&1 | grep ^Location | awk '{print $2}')
+## Use cookies for Twitter
+case "$url" in
+    "https://twitter.com"*)
+        no_yt=1
+        # cookies=1
+        ;;
+    *) : ;;
+esac
 if [ ! "$no_yt" ]; then
 	## If $url doesn't include 'playlist?list' or 'watch?v' or neither
 	if [ "${url##*playlist?list*}" ] || [ "${url##*watch?v*}" ] \
@@ -62,14 +70,14 @@ fi
 ## Whether to show video description
 if [ "$descr" ]; then
 	printf -- "---\n"
-	youtube-dl --get-description "$url" --downloader aria2c
+	yt-dlp --get-description "$url" --downloader aria2c
 	printf -- "---\n"
 	sleep 0.25
 fi
 
-## Set youtube-dl format
+## Set yt-dlp format
 if [ "$choose_format" ] || [ "$no_yt" ]; then
-    format=$(youtube-dl -q --list-formats "$url" | fzf | awk '{print $1'})
+    format=$(yt-dlp -q --list-formats --cookies ~/.config/yt/cookies.txt "$url" | fzf | awk '{print $1'})
 elif [ "$audio" ]; then
 	format="bestaudio[abr<=130]"
 # elif [ "$no_yt" ]; then
@@ -82,29 +90,30 @@ fi
 ## Download or play content
 if [ "$dl" ]; then
 	if [ "$audio" ] && [ ! "$no_yt" ]; then
-		youtube-dl -xic --add-metadata \
+		yt-dlp -xic --add-metadata \
 			--audio-format "${e:-m4a}" --audio-quality "${b:-96K}" \
 			-f "$format" \
 			"$url" \
 			-o "%(uploader)s - %(title)s.%(ext)s" \
             --downloader aria2c
 	else
-		youtube-dl -ic --add-metadata \
+		yt-dlp -ic --add-metadata \
+            --cookies ~/.config/yt/cookies.txt \
 			-f "$format" \
 			"$url" \
 			-o "%(uploader)s - %(title)s.%(ext)s" \
             --downloader aria2c
 
         if [ "$audio" ] && [ "$no_yt" ]; then
-            filename="$(youtube-dl -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
+            filename="$(yt-dlp  --cookies ~/.config/yt/cookies.txt -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
             stripaudio "$filename"
             rm "$filename"
         fi
 	fi
 elif [ "$audio" ]; then
-	mpv --no-video --ytdl-raw-options=format="$format",downloader=aria2c "$url"
+	mpv --no-video --ytdl-raw-options=format="$format",downloader=aria2c,cookies="~/.config/yt/cookies.txt" "$url"
     # mpv --no-video --ytdl-raw-options=format="$format" "$url"
 else
-	mpv --ytdl-raw-options=format="$format",downloader=aria2c "$url"
+	mpv --ytdl-raw-options=format="$format",downloader=aria2c,cookies="~/.config/yt/cookies.txt" "$url"
     # mpv --ytdl-raw-options=format="$format" "$url"
 fi
