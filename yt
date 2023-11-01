@@ -5,6 +5,7 @@
 ##  -Set format string with -f (or leave empty to not set it at all)
 ##  -Set codec with -c
 ##  -Set max audio quality with -q
+##  -cookies from flatpak: '--cookies-from-browser chrome:~/.var/app/com.google.Chrome/'
 
 print_help()
 {
@@ -18,6 +19,7 @@ Options:
     -v  print description; for YouTube videos only
     -o  don't replace url host with "youtube.com"
     -s  expand shortened URL
+    -c  download captions
 EOF
 }
 
@@ -38,6 +40,7 @@ while getopts r:e:b:davofhs opt; do
 		o) no_yt=1 ;;
         f) choose_format=1 ;;
         s) short=1 ;;
+        c) captions=1 ;;
 		h) print_help && exit ;;
 		*) exit 1 ;;
 	esac
@@ -77,7 +80,7 @@ fi
 
 ## Set yt-dlp format
 if [ "$choose_format" ] || [ "$no_yt" ]; then
-    format=$(yt-dlp -q --list-formats --cookies ~/.config/yt/cookies.txt "$url" | fzf | awk '{print $1'})
+    format=$(yt-dlp -q --list-formats --cookies-from-browser firefox "$url" | fzf | awk '{print $1'})
 elif [ "$audio" ]; then
 	format="bestaudio[abr<=130]"
 # elif [ "$no_yt" ]; then
@@ -98,22 +101,22 @@ if [ "$dl" ]; then
             --downloader aria2c
 	else
 		yt-dlp -ic --add-metadata \
-            --cookies ~/.config/yt/cookies.txt \
+            --cookies-from-browser firefox \
 			-f "$format" \
 			"$url" \
 			-o "%(uploader)s - %(title)s.%(ext)s" \
             --downloader aria2c
 
         if [ "$audio" ] && [ "$no_yt" ]; then
-            filename="$(yt-dlp  --cookies ~/.config/yt/cookies.txt -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
+            filename="$(yt-dlp --cookies-from-browser firefox -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
             stripaudio "$filename"
             rm "$filename"
         fi
 	fi
 elif [ "$audio" ]; then
-	mpv --no-video --ytdl-raw-options=format="$format",downloader=aria2c,cookies="~/.config/yt/cookies.txt" "$url"
+	mpv --no-video --ytdl-raw-options=format="$format",downloader=aria2c,cookies-from-browser=firefox "$url"
     # mpv --no-video --ytdl-raw-options=format="$format" "$url"
 else
-	mpv --ytdl-raw-options=format="$format",downloader=aria2c,cookies="~/.config/yt/cookies.txt" "$url"
+	mpv --ytdl-raw-options=format="$format",downloader=aria2c,cookies-from-browser=firefox "$url"
     # mpv --ytdl-raw-options=format="$format" "$url"
 fi
