@@ -3,22 +3,30 @@
 ## TODO: apply sort only if -h or -d haven't been given
 ## TODO: lose the while loop
 
-world=" $(grep '^P' /lib/apk/db/installed | sed 's/P://' | sort | tr '\n' ' ') "
-[ "$world" ] || { apk search "$@" | sort; exit; }
+## print version: grep -A 1 '^P:<pkg>$' /lib/apk/db/installed | sed -e '1d' -e 's/^V://'
 
+local_names=" $(grep '^P' /lib/apk/db/installed | sed 's/P://' | tr '\n' ' ') "
+[ "$local_names" ] || { apk search "$@" | sort; exit; }
+
+local_names_versions=" $(grep -A 1 --no-group-separator '^P' /lib/apk/db/installed \
+| sed -e 's/^P://' -e 's/^V://' \
+| paste -sd'-\n' \
+| tr '\n' ' ') "
 apk search "$@" | sort | while read pkg; do
-	basename="${pkg%-*-*}"
-	case "$world" in
-		*" $basename "*)
-			local_pkg="$(apk info -ev $basename)"
-			if [ "$pkg" = "$local_pkg" ]; then
-				printf "%-40s = %s\n" "$pkg" "$local_pkg"
-			else
-				printf "%-39s != %s\n" "$pkg" "$local_pkg"
-			fi
-			;;
-		*)
-			printf "%s\n" "$pkg"
-			;;
-	esac
+    basename="${pkg%-*-*}"
+    case "$local_names" in
+        *" $basename "*)
+            strip_left="${local_names_versions#* $basename}"
+            version="${strip_left%% *}"
+            local_pkg="${basename}${version}"
+            if [ "$pkg" = "$local_pkg" ]; then
+                printf "%-40s = %s\n" "$pkg" "$local_pkg"
+            else
+                printf "%-39s != %s\n" "$pkg" "$local_pkg"
+            fi
+            ;;
+        *)
+            printf "%s\n" "$pkg"
+            ;;
+    esac
 done
