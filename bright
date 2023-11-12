@@ -1,11 +1,25 @@
 #!/bin/sh
 
+# case "$1" in
+#     get) ddcutil getvcp 10 ;;
+#     '') ddcutil getvcp 10 ;;
+#     set)
+#         [ "$#" -gt 1 ] && shift
+#         ddcutil setvcp 10 "$@"
+#         ;;
+#     *) printf "Usage: bright get | set <n>\n" ;;
+# esac
+
 
 if [ "$1" = "get" ] || [ -z "$1" ]; then
     ddcutil getvcp 10
 elif [ "$1" = "set" ] || printf "%d" "$1" > /dev/null 2>&1; then
     [ "$#" -gt 1 ] && shift
     ddcutil setvcp 10 "$@"
+elif [ "$1" = "up" ]; then
+    ddcutil setvcp 10 + ${2:-5}
+elif [ "$1" = "down" ]; then
+    ddcutil setvcp 10 - ${2:-5}
 else
-    printf "Usage: bright get | set <n>\n"
+    printf "Usage: bright get | set | up | down <n>\n"
 fi
