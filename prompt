@@ -30,7 +30,7 @@ else
 	# PS1='\[\e]0;\W\a\033[${col}\]${host}${_pwd} \$\[\033[00m\] '
 	# PS1="\\[\\e]0;\\W\\a\\033[${col}\\]${host}${_pwd} \\$\\[\\033[00m\\] "
 	# PS1="${_venv}\\[\\e]0;\\W\\a\\033[${_path_col}\\]${_host}${_pwd} \\$\\[\\033[00m\\] "
-	PS1="${_venv}\\[\\e]0;\\W\\a\\[\\033[${_path_col}\\]${_host}${_pwd}\\[\\033[${_branch_col}\\]${_git} \\[\\033[${_path_col}\\]\\$\\[\\033[00m\\] "
-
+	# PS1="${_venv}\\[\\e]0;\\W\\a\\[\\033[${_path_col}\\]${_host}${_pwd}\\[\\033[${_branch_col}\\]${_git} \\[\\033[${_path_col}\\]\\$\\[\\033[00m\\] "
+    PS1="${_venv}\\[\\e]0;\\W\\a\\[\\033[${_branch_col}\\]${_host}\\[\\033[${_path_col}${_pwd}\\]\\[\\033[${_branch_col}\\]${_git} \\[\\033[${_path_col}\\]\\$\\[\\033[00m\\] "
 	unset _path_col _branch_col _pwd _host _venv _git_branch _git_tag _git
 fi
