@@ -1,0 +1,6 @@
+#!/bin/sh
+
+host="$1"
+shift
+
+ssh -t "$host" "$*"
