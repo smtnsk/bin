@@ -2,7 +2,7 @@
 
 fields="$(rbw ls --fields folder,name,user | \
 	sed 's/^[\t ]*//; s/\t/ | /' | \
-	rofi -dmenu -i | \
+	rofi -dmenu -matching fuzzy -sort -i | \
 	sed 's/ |//' | \
 	xargs -r rbw get --full)"
 
