@@ -1,0 +1,10 @@
+#!/bin/sh
+
+## TODO: Kill other notify-dns scripts
+
+while :; do
+    if grep "dnscrypt-proxy is ready" /var/log/dnscrypt-proxy/dnscrypt-proxy.log > /dev/null; then
+        exec notify-send -a "${0##*/}" -u low "dnscrypt-proxy is ready"
+    fi
+    sleep 1
+done
