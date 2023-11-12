@@ -73,7 +73,7 @@ fi
 ## Whether to show video description
 if [ "$descr" ]; then
 	printf -- "---\n"
-	yt-dlp --get-description "$url" --downloader aria2c
+	yt-dlp --get-description "$url"
 	printf -- "---\n"
 	sleep 0.25
 fi
@@ -98,14 +98,16 @@ if [ "$dl" ]; then
 			-f "$format" \
 			"$url" \
 			-o "%(uploader)s - %(title)s.%(ext)s" \
-            --downloader aria2c
+            --downloader aria2c \
+            --downloader-args aria2c:'--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true'
 	else
 		yt-dlp -ic --add-metadata \
             --cookies-from-browser firefox \
 			-f "$format" \
 			"$url" \
 			-o "%(uploader)s - %(title)s.%(ext)s" \
-            --downloader aria2c
+            --downloader aria2c \
+            --downloader-args aria2c:'--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true'
 
         if [ "$audio" ] && [ "$no_yt" ]; then
             filename="$(yt-dlp --cookies-from-browser firefox -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
@@ -114,9 +116,9 @@ if [ "$dl" ]; then
         fi
 	fi
 elif [ "$audio" ]; then
-	mpv --no-video --ytdl-raw-options=format="$format",downloader=aria2c,cookies-from-browser=firefox "$url"
+	mpv --no-video --ytdl-raw-options=format="$format",downloader=aria2c,downloader-args="aria2c:'--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true'",cookies-from-browser=firefox "$url"
     # mpv --no-video --ytdl-raw-options=format="$format" "$url"
 else
-	mpv --ytdl-raw-options=format="$format",downloader=aria2c,cookies-from-browser=firefox "$url"
+	mpv --ytdl-raw-options=format="$format",downloader=aria2c,downloader-args="aria2c:'--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true'",cookies-from-browser=firefox "$url"
     # mpv --ytdl-raw-options=format="$format" "$url"
 fi
