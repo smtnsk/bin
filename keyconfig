@@ -15,6 +15,7 @@ case "$1" in
                   -layout us,fi \
                   -variant ,mac \
                   -option ctrl:nocaps,grp:alt_space_toggle,terminate:ctrl_alt_bksp
+        xset r rate $DELAY $RATE
         ;;
     apple)
         ## TODO: hid_apple options
@@ -25,6 +26,7 @@ case "$1" in
                   -layout us,fi \
                   -variant ,mac \
                   ctrl:nocaps,grp:alt_space_toggle,apple:alupckeys,terminate:ctrl_alt_bksp
+        xset r rate $DELAY $RATE
         ;;
     vcon)
         doas kbdrate -d $DELAY -r $RATE ;;
