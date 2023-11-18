@@ -1,6 +1,11 @@
 #!/bin/sh
 
+while [ -z ${1%%-*} ]; do
+    _opts="$opts $1"
+    shift
+done
+
 host="$1"
 shift
 
-ssh -t "$host" "$*"
+ssh $_opts "$host" "$*"
