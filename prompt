@@ -17,7 +17,7 @@ else
 	_branch_col="1;35m"  # magenta
 
 	_pwd="$(printf "%s" "$_pwd" | sed 's:\([^/]\)[^/]*/:\1/:g')"  # print shortened pwd
-	is_ssh 2> /dev/null && _host="\h:"  # print hostname if ssh'd in
+	[ "$SSH_CONNECTION" ] && _host="\h:"  # print hostname if ssh'd in
 	[ "$VIRTUAL_ENV" ] && _venv="(${VIRTUAL_ENV##*/}) "  # print venv if in one
 	_git_branch="$(git symbolic-ref --short HEAD 2> /dev/null)"
 	if [ $? -ne 0 ]; then
