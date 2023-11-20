@@ -93,8 +93,9 @@ fi
 ## Download or play content
 if [ "$dl" ]; then
 	if [ "$audio" ] && [ ! "$no_yt" ]; then
-		yt-dlp -xic --add-metadata \
-			--audio-format "${e:-m4a}" --audio-quality "${b:-96K}" \
+		yt-dlp -ic --add-metadata \
+            --format-sort aext:m4a \
+            --recode m4a \
 			-f "$format" \
 			"$url" \
 			-o "%(uploader)s - %(title)s.%(ext)s" \
