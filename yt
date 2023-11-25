@@ -9,7 +9,7 @@
 
 print_help()
 {
-	cat << EOF
+    cat << EOF
 Options:
     -r  max resolution (default: 720)
     -d  download
@@ -24,26 +24,26 @@ EOF
 }
 
 while getopts r:e:b:davofhs opt; do
-	case $opt in
-		r|e|b)
-			eval "nextarg=\$$OPTIND"
-			if [ "${OPTARG%%[^-]*}" = "-" ] || [ ! "$nextarg" ]; then
-				printf -- "-%s needs an argument\n" "$opt"
-				exit 1
-			fi
-			## TODO: sanitize $OPTARG
-			eval "$opt=$OPTARG"
-			;;
-		d) dl=1 ;;
-		a) audio=1 ;;
-		v) descr=1 ;;
-		o) no_yt=1 ;;
+    case $opt in
+        r|e|b)
+            eval "nextarg=\$$OPTIND"
+            if [ "${OPTARG%%[^-]*}" = "-" ] || [ ! "$nextarg" ]; then
+                printf -- "-%s needs an argument\n" "$opt"
+                exit 1
+            fi
+            ## TODO: sanitize $OPTARG
+            eval "$opt=$OPTARG"
+            ;;
+        d) dl=1 ;;
+        a) audio=1 ;;
+        v) descr=1 ;;
+        o) no_yt=1 ;;
         f) choose_format=1 ;;
         s) short=1 ;;
         c) captions=1 ;;
-		h) print_help && exit ;;
-		*) exit 1 ;;
-	esac
+        h) print_help && exit ;;
+        *) exit 1 ;;
+    esac
 done
 shift $((OPTIND - 1))
 
@@ -61,65 +61,61 @@ case "$url" in
     *) : ;;
 esac
 if [ ! "$no_yt" ]; then
-	## If $url doesn't include 'playlist?list' or 'watch?v' or neither
-	if [ "${url##*playlist?list*}" ] || [ "${url##*watch?v*}" ] \
-		   && ! { [ "${url##*playlist?list*}" ] && [ "${url##*watch?v*}" ]; }; then
-		url="$(echo "$*" | sed -E 's/\/\/.*\//\/\/youtube.com\//g')"
-	else
-		url="$(echo "$*" | sed -E 's/\/\/.*\//\/\/youtube.com\/watch?v=/g')"
-	fi
+    ## If $url doesn't include 'playlist?list' or 'watch?v' or neither
+    if [ "${url##*playlist?list*}" ] || [ "${url##*watch?v*}" ] \
+           && ! { [ "${url##*playlist?list*}" ] && [ "${url##*watch?v*}" ]; }; then
+        url="$(echo "$*" | sed -E 's/\/\/.*\//\/\/youtube.com\//g')"
+    else
+        url="$(echo "$*" | sed -E 's/\/\/.*\//\/\/youtube.com\/watch?v=/g')"
+    fi
 fi
 
 ## Whether to show video description
 if [ "$descr" ]; then
-	printf -- "---\n"
-	yt-dlp --get-description "$url"
-	printf -- "---\n"
-	sleep 0.25
+    printf -- "---\n"
+    yt-dlp --get-description "$url"
+    printf -- "---\n"
+    sleep 0.25
 fi
 
 ## Set yt-dlp format
 if [ "$choose_format" ] || [ "$no_yt" ]; then
-    format=$(yt-dlp -q --list-formats --cookies-from-browser firefox "$url" | fzf | awk '{print $1'})
+    format=$(yt-dlp -q --cookies-from-browser firefox --list-formats "$url" | fzf | awk '{print $1'})
 elif [ "$audio" ]; then
-	format="bestaudio[abr<=130]"
+    format="bestaudio[abr<=130]"
 # elif [ "$no_yt" ]; then
-# 	format="37/22/18/best"
+#   format="37/22/18/best"
 else
-	# format="bestvideo[height<=?${r:-720}][vcodec!=?vp9]+bestaudio[abr<=130]"
-	format="bestvideo[height<=?${r:-720}]+bestaudio[abr<=?130]"
+    # format="bestvideo[height<=?${r:-720}][vcodec!=?vp9]+bestaudio[abr<=130]"
+    format="bestvideo[height<=?${r:-720}]+bestaudio[abr<=?130]"
 fi
+
+aria_opts="--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true"
+ytdl_out="%(uploader)s - %(title)s.%(ext)s"
+ytdl_opts="-ic -f $format --no-mtime --add-metadata --cookies-from-browser firefox"
+mpv_opts="--ytdl-raw-options=format=$format,cookies-from-browser=firefox,downloader=aria2c,downloader-args=aria2c:\"$aria_opts\""
 
 ## Download or play content
 if [ "$dl" ]; then
-	if [ "$audio" ] && [ ! "$no_yt" ]; then
-		yt-dlp -ic --add-metadata \
+    if [ "$audio" ]; then
+        # exec yt-dlp "$url" --format-sort aext:m4a --recode m4a "$ytdl_opts"
+        exec yt-dlp "$url" \
+            $ytdl_opts \
+            -o "$ytdl_out" \
             --format-sort aext:m4a \
             --recode m4a \
-			-f "$format" \
-			"$url" \
-			-o "%(uploader)s - %(title)s.%(ext)s" \
             --downloader aria2c \
-            --downloader-args aria2c:'--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true'
-	else
-		yt-dlp -ic --add-metadata \
-            --cookies-from-browser firefox \
-			-f "$format" \
-			"$url" \
-			-o "%(uploader)s - %(title)s.%(ext)s" \
-            --downloader aria2c \
-            --downloader-args aria2c:'--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true'
-
-        if [ "$audio" ] && [ "$no_yt" ]; then
-            filename="$(yt-dlp --cookies-from-browser firefox -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
-            stripaudio "$filename"
-            rm "$filename"
-        fi
-	fi
+            --downloader-args aria2c:"$aria_opts"
+    else
+        # exec yt-dlp "$url" "$ytdl_opts"
+        exec yt-dlp "$url" \
+           $ytdl_opts \
+           -o "$ytdl_out" \
+           --downloader aria2c \
+           --downloader-args aria2c:"$aria_opts"
+    fi
 elif [ "$audio" ]; then
-	mpv --no-video --ytdl-raw-options=format="$format",downloader=aria2c,downloader-args="aria2c:'--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true'",cookies-from-browser=firefox "$url"
-    # mpv --no-video --ytdl-raw-options=format="$format" "$url"
+    exec mpv --no-video "$mpv_opts" "$url"
 else
-	mpv --ytdl-raw-options=format="$format",downloader=aria2c,downloader-args="aria2c:'--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true'",cookies-from-browser=firefox "$url"
-    # mpv --ytdl-raw-options=format="$format" "$url"
+    exec mpv "$mpv_opts" "$url"
 fi
