@@ -98,14 +98,29 @@ mpv_opts="--ytdl-raw-options=format=$format,cookies-from-browser=firefox,downloa
 ## Download or play content
 if [ "$dl" ]; then
     if [ "$audio" ]; then
-        # exec yt-dlp "$url" --format-sort aext:m4a --recode m4a "$ytdl_opts"
-        exec yt-dlp "$url" \
-            $ytdl_opts \
-            -o "$ytdl_out" \
-            --format-sort aext:m4a \
-            --recode m4a \
-            --downloader aria2c \
-            --downloader-args aria2c:"$aria_opts"
+        if [ "$no_yt" ]; then
+             yt-dlp "$url" \
+                $ytdl_opts \
+                -o "$ytdl_out" \
+                --format-sort aext:m4a \
+                --downloader aria2c \
+                --downloader-args aria2c:"$aria_opts"
+
+             filename="$(yt-dlp --cookies-from-browser firefox -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
+             if [ "${filename##*.}" != "m4a" ]; then
+                 stripaudio "$filename"
+                 rm "$filename"
+             fi
+        else
+            # exec yt-dlp "$url" --format-sort aext:m4a --recode m4a "$ytdl_opts"
+            exec yt-dlp "$url" \
+                $ytdl_opts \
+                -o "$ytdl_out" \
+                --format-sort aext:m4a \
+                --recode m4a \
+                --downloader aria2c \
+                --downloader-args aria2c:"$aria_opts"
+        fi
     else
         # exec yt-dlp "$url" "$ytdl_opts"
         exec yt-dlp "$url" \
