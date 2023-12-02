@@ -107,7 +107,7 @@ if [ "$dl" ]; then
                 --downloader-args aria2c:"$aria_opts"
 
              filename="$(yt-dlp --cookies-from-browser firefox -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
-             if [ "${filename##*.}" != "m4a" ]; then
+             if [ -e "$filename"] && [ "${filename##*.}" != "m4a" ]; then
                  stripaudio "$filename"
                  rm "$filename"
              fi
