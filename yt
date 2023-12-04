@@ -80,7 +80,7 @@ fi
 
 ## Set yt-dlp format
 if [ "$choose_format" ] || [ "$no_yt" ]; then
-    format=$(yt-dlp -q --cookies-from-browser firefox --list-formats "$url" | fzf | awk '{print $1'})
+    format=$(yt-dlp -q --cookies-from-browser firefox --list-formats "$url" | fzf | awk '{print $1}')
 elif [ "$audio" ]; then
     format="bestaudio[abr<=130]"
 # elif [ "$no_yt" ]; then
@@ -107,7 +107,7 @@ if [ "$dl" ]; then
                 --downloader-args aria2c:"$aria_opts"
 
              filename="$(yt-dlp --cookies-from-browser firefox -q "$url" -o "%(uploader)s - %(title)s.%(ext)s" --get-filename --ignore-config)"
-             if [ -e "$filename"] && [ "${filename##*.}" != "m4a" ]; then
+             if [ -e "$filename" ] && [ "${filename##*.}" != "m4a" ]; then
                  stripaudio "$filename"
                  rm "$filename"
              fi
