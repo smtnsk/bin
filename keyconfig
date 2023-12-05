@@ -13,7 +13,6 @@ case "$1" in
     ctrl)
         setxkbmap -model pc104 \
                   -layout us,fi \
-                  -variant ,mac \
                   -option ctrl:nocaps,grp:alt_space_toggle,terminate:ctrl_alt_bksp
         xset r rate $DELAY $RATE
         ;;
