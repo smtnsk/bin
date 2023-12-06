@@ -4,8 +4,8 @@
 locker=${locker:=sxlock}
 
 if ! type "$locker" > /dev/null 2>&1; then
-	echo "$locker does not exist"
-	exit 1
+    echo "$locker does not exist"
+    exit 1
 fi
 if pidof "$locker"; then exit; fi
 
@@ -14,26 +14,27 @@ doas setgov schedutil
 trap 'doas setgov $cur_gov' 0 1 2 3 15
 
 case $locker in
-	sxlock)
-		sxlock -u 'Welcome back, master.' -f '-misc-fixed-bold-*-*-*-18-*-*-*-*-*-*-*'
-		;;
-	xsecurelock)
-		## Supposedly a more secure locker
-		XSECURELOCK_AUTH_CURSOR_BLINK=0 \
-		XSECURELOCK_AUTH_WARNING_COLOR=red \
-		XSECURELOCK_AUTH_TIMEOUT=10 \
-		XSECURELOCK_BLANK_TIMEOUT=10 \
-		XSECURELOCK_BLANK_DPMS_STATE=standby \
-		XSECURELOCK_DATETIME_FORMAT='%a %D %H:%M' \
-		XSECURELOCK_SHOW_DATETIME=1 \
-		XSECURELOCK_SHOW_USERNAME=0 \
-		XSECURELOCK_SHOW_HOSTNAME=0 \
-		XSECURELOCK_FONT='-misc-fixed-bold-*-*-*-18-*-*-*-*-*-*-*' \
-		XSECURELOCK_LIST_VIDEOS_COMMAND='find /home/smtnskn/media/video/xsecurelock -type f' \
-		    xsecurelock > /dev/null 2>&1
-		    # xsecurelock saver_mpv > /dev/null 2>&1"
-		;;
-	*)
-		echo "Unknown locker.";
-		;;
+    sxlock)
+        sxlock -u 'Welcome back, master.' -f '-misc-fixed-bold-*-*-*-18-*-*-*-*-*-*-*'
+        ;;
+    xsecurelock)
+        ## Supposedly a more secure locker
+        XSECURELOCK_AUTH_CURSOR_BLINK=0 \
+        XSECURELOCK_AUTH_WARNING_COLOR=red \
+        XSECURELOCK_AUTH_TIMEOUT=10 \
+        XSECURELOCK_BLANK_TIMEOUT=10 \
+        XSECURELOCK_WAIT_TIME_MS=2000 \
+        XSECURELOCK_BLANK_DPMS_STATE=standby \
+        XSECURELOCK_DATETIME_FORMAT='%a %D %H:%M' \
+        XSECURELOCK_SHOW_DATETIME=1 \
+        XSECURELOCK_SHOW_USERNAME=0 \
+        XSECURELOCK_SHOW_HOSTNAME=0 \
+        XSECURELOCK_FONT='-misc-fixed-bold-*-*-*-18-*-*-*-*-*-*-*' \
+        XSECURELOCK_LIST_VIDEOS_COMMAND='find /home/smtnskn/media/video/xsecurelock -type f' \
+        xsecurelock > /dev/null 2>&1
+        # xsecurelock saver_mpv > /dev/null 2>&1"
+        ;;
+    *)
+        echo "Unknown locker.";
+        ;;
 esac
