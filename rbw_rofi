@@ -6,8 +6,8 @@ fields="$(rbw ls --fields folder,name,user | \
 	sed 's/ |//' | \
 	xargs -r rbw get --full)"
 
-printf "%s" "$fields" | sed q | tr -d '\n' | xsel -ip -t 30000
-printf "%s" "$fields" | awk '/Username/ {print $2;}' | tr -d '\n' | xsel -ib -t 30000
+printf "%s" "$fields" | sed q | tr -d '\n' | xsel -ib -t 30000
+printf "%s" "$fields" | awk '/Username/ {print $2;}' | tr -d '\n' | xsel -ip -t 30000
 
 # password=$(printf "%s" "$fields" | sed q)
 # username=$(printf "%s" "$fields" | awk '/Username/ {print $2;}')
