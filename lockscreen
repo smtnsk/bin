@@ -10,7 +10,7 @@ fi
 if pidof "$locker"; then exit; fi
 
 cur_gov="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
-doas setgov schedutil
+doas setgov performance
 trap 'doas setgov $cur_gov' 0 1 2 3 15
 
 case $locker in
@@ -19,6 +19,7 @@ case $locker in
         ;;
     xsecurelock)
         ## Supposedly a more secure locker
+        XSECURELOCK_PASSWORD_PROMPT=asterisks \
         XSECURELOCK_AUTH_CURSOR_BLINK=0 \
         XSECURELOCK_AUTH_WARNING_COLOR=red \
         XSECURELOCK_AUTH_TIMEOUT=10 \
