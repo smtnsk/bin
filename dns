@@ -12,7 +12,11 @@ while read -r line; do
 done < "$config"
 [ "$dns" ] || dns="$1"
 
-attrs=$(lsattr "$file" | cut -d' ' -f1 | tr -d '-')
+attrs=$(lsattr "$file" | cut -d' ' -f1 | tr -d '-' 2> /dev/null)
 [ "$attrs" ] && chattr -"$attrs" "$file"
-printf "%s\n" "$(sed "s/nameserver.*/nameserver $dns/" "$file")" > "$file"
+cat > $file <<EOF
+search $(hostname | tr '[:upper:]' '[:lower:]').local
+options edns0 single-request-reopen
+nameserver $dns
+EOF
 [ "$attrs" ] && chattr +"$attrs" "$file"
