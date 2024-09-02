@@ -65,6 +65,8 @@ if [ ! "$no_yt" ]; then
     if [ "${url##*playlist?list*}" ] || [ "${url##*watch?v*}" ] \
            && ! { [ "${url##*playlist?list*}" ] && [ "${url##*watch?v*}" ]; }; then
         url="$(echo "$*" | sed -E 's/\/\/.*\//\/\/youtube.com\//g')"
+    elif [ ! "${url##*\/channel\/*}" ]; then
+        url="https://youtube.com/channel/${url#*\/channel\/}"
     else
         url="$(echo "$*" | sed -E 's/\/\/.*\//\/\/youtube.com\/watch?v=/g')"
     fi
@@ -87,13 +89,18 @@ elif [ "$audio" ]; then
 #   format="37/22/18/best"
 else
     # format="bestvideo[height<=?${r:-720}][vcodec!=?vp9]+bestaudio[abr<=130]"
-    format="bestvideo[height<=?${r:-720}]+bestaudio[abr<=?130]"
+    format="bestvideo[height<=?${r:-720}][vcodec!~='vp0?9']+bestaudio"
+    # format="bestvideo[height<=?${r:-720}]+bestaudio"
 fi
 
 aria_opts="--file-allocation=falloc --optimize-concurrent-downloads=true --http-accept-gzip=true"
 ytdl_out="%(uploader)s - %(title)s.%(ext)s"
-ytdl_opts="-ic -f $format --no-mtime --add-metadata --cookies-from-browser firefox"
-mpv_opts="--ytdl-raw-options=format=$format,cookies-from-browser=firefox,downloader=aria2c,downloader-args=aria2c:\"$aria_opts\""
+ytdl_opts="-ic -f $format --no-mtime --add-metadata --cookies-from-browser firefox --restrict-filenames --trim-filenames 100" # --extractor-args youtube:player_client=android,web"
+mpv_opts="--ytdl-raw-options=format=$format,cookies-from-browser=firefox"
+# mpv_opts="--ytdl-raw-options=restrict-filenames=,format=$format,cookies-from-browser=firefox,downloader=aria2c,downloader-args=aria2c:\"$aria_opts\""
+# mpv_opts="--ytdl-raw-options=format=$format,cookies-from-browser=firefox,downloader=aria2c,downloader-args=aria2c:\"$aria_opts\""
+# mpv_opts="--ytdl-raw-options=format=$format,cookies-from-browser=firefox --demuxer-lavf-o=http_persistent=0"
+# mpv_opts="--ytdl-raw-options=format=$format,cookies-from-browser=firefox,extractor-args=youtube:player_client=android,web"
 
 ## Download or play content
 if [ "$dl" ]; then
@@ -130,7 +137,10 @@ if [ "$dl" ]; then
            --downloader-args aria2c:"$aria_opts"
     fi
 elif [ "$audio" ]; then
-    exec mpv --no-video "$mpv_opts" "$url"
+    echo mpv --no-video $mpv_opts "$url"
+    exec mpv --no-video $mpv_opts "$url"
 else
-    exec mpv "$mpv_opts" "$url"
+    echo mpv $mpv_opts "$url"
+    exec mpv $mpv_opts "$url"
+    # exec mpv --ytdl-raw-options=cookies-from-browser=firefox,extractor-args=youtube:player_client"=android,web"
 fi
