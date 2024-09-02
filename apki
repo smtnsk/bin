@@ -9,15 +9,22 @@ done
 
 ## If arguments with no options were provided,
 ## display the installed size of the package(s) in human-readable format
-apk info "$@" |
-	while read -r line; do
-		case "$line" in
-			''|*[!0-9]*)
-				echo "$line"
-				;;
-			*)
-				printf "%s\n%s\n" "$(echo "scale=2; $line/1024" | bc) KiB" \
-					   "$(echo "scale=2; $line/1024^2" | bc) MiB"
-			   	;;
-		esac
-	done
+pipe=/dev/shm/apki_$$
+
+trap "rm $pipe" 0 1 2 3 15
+mkfifo -m 600 $pipe
+
+apk info --repositories-file /etc/apk/repositories-base "$@" > $pipe &
+[ $? -ne 0 ] && apk info --repositories-file /etc/apk/repositories-edge "$@" > $pipe
+
+while read -r line; do
+	case "$line" in
+		''|*[!0-9]*)
+			echo "$line"
+			;;
+		*)
+			printf "%s\n%s\n" "$(echo "scale=2; $line/1024" | bc) KiB" \
+				   "$(echo "scale=2; $line/1024^2" | bc) MiB"
+			;;
+	esac
+done < $pipe
