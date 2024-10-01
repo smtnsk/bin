@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ## TODO:
 ##  -This is ugly and makes me sad.
@@ -6,6 +6,8 @@
 ##  -Set codec with -c
 ##  -Set max audio quality with -q
 ##  -cookies from flatpak: '--cookies-from-browser chrome:~/.var/app/com.google.Chrome/'
+
+yt_histfile=~/.local/share/ythist.log
 
 print_help()
 {
@@ -140,6 +142,11 @@ elif [ "$audio" ]; then
     echo mpv --no-video $mpv_opts "$url"
     exec mpv --no-video $mpv_opts "$url"
 else
+    (cat <(printf "%(%F %H:%M)T   ") \
+         <(yt-dlp --print "%(webpage_url)s   %(channel)s - %(title)s" "$url") \
+         >> "$yt_histfile" \
+     & exit)
+
     echo mpv $mpv_opts "$url"
     exec mpv $mpv_opts "$url"
     # exec mpv --ytdl-raw-options=cookies-from-browser=firefox,extractor-args=youtube:player_client"=android,web"
